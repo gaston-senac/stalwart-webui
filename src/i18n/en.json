@@ -190,6 +190,7 @@
     "value": "Value"
   },
   "field": {
+    "active": "Active",
     "add": "Add",
     "addItem": "Add item",
     "contentModified": "Content modified (will be saved as a new blob)",

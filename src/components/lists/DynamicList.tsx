@@ -561,6 +561,12 @@ export function DynamicList({ viewName }: DynamicListProps) {
 
   const objectName = resolved?.obj.objectName;
   const isWebApplications = viewName === 'x:Application' || objectName === 'x:Application';
+  // SCHEMA-DEVIATION: sieve-script-active-column-fallback (see SCHEMA_DEVIATIONS.md)
+  const isSieveScriptList =
+    objectName === 'x:SieveSystemScript' ||
+    objectName === 'x:SieveUserScript' ||
+    viewName === 'x:SieveSystemScript' ||
+    viewName === 'x:SieveUserScript';
   const isLogEntries = viewName === 'x:Log' || objectName === 'x:Log';
   const isAccountsList = viewName === 'x:Account/User';
   const isMailboxList = viewName === 'Mailbox';
@@ -580,28 +586,43 @@ export function DynamicList({ viewName }: DynamicListProps) {
 
   const displayColumns = useMemo(() => {
     const columns = resolved?.list?.columns ?? [];
-    if (!isWebApplications) return columns;
 
-    // For Web Applications, present Description first and Enabled second
-    // to match the layout of other tables such as Domains. Reordering real
-    // schema columns is fine, but the synthetic fallback below (when the
-    // schema doesn't list an Enabled column at all) is a tracked deviation.
-    // SCHEMA-DEVIATION: webapp-enabled-column-fallback (see SCHEMA_DEVIATIONS.md)
-    const ordered = ['description', 'enabled'];
-    const rest = columns.filter((c) => !ordered.includes(c.name));
-    const descriptionCol = columns.find((c) => c.name === 'description');
-    const enabledCol = columns.find((c) => c.name === 'enabled');
+    if (isWebApplications) {
+      // For Web Applications, present Description first and Enabled second
+      // to match the layout of other tables such as Domains. Reordering real
+      // schema columns is fine, but the synthetic fallback below (when the
+      // schema doesn't list an Enabled column at all) is a tracked deviation.
+      // SCHEMA-DEVIATION: webapp-enabled-column-fallback (see SCHEMA_DEVIATIONS.md)
+      const ordered = ['description', 'enabled'];
+      const rest = columns.filter((c) => !ordered.includes(c.name));
+      const descriptionCol = columns.find((c) => c.name === 'description');
+      const enabledCol = columns.find((c) => c.name === 'enabled');
 
-    const result: Array<{ name: string; label: string }> = [];
-    if (descriptionCol) result.push(descriptionCol);
-    if (enabledCol) {
-      result.push(enabledCol);
-    } else {
-      result.push({ name: 'enabled', label: t('webApplications.enabled', 'Enabled') });
+      const result: Array<{ name: string; label: string }> = [];
+      if (descriptionCol) result.push(descriptionCol);
+      if (enabledCol) {
+        result.push(enabledCol);
+      } else {
+        result.push({ name: 'enabled', label: t('webApplications.enabled', 'Enabled') });
+      }
+      result.push(...rest);
+      return result;
     }
-    result.push(...rest);
-    return result;
-  }, [resolved?.list?.columns, isWebApplications]);
+
+    if (isSieveScriptList && !columns.some((c) => c.name === 'isActive')) {
+      // System/User Sieve script lists don't declare an Active column even
+      // though isActive is a real property (the per-account SieveScript list
+      // does declare it) — inserted right after the identifier column to
+      // match that list's layout.
+      // SCHEMA-DEVIATION: sieve-script-active-column-fallback (see SCHEMA_DEVIATIONS.md)
+      const [first, ...rest] = columns;
+      return first
+        ? [first, { name: 'isActive', label: t('field.active', 'Active') }, ...rest]
+        : [{ name: 'isActive', label: t('field.active', 'Active') }];
+    }
+
+    return columns;
+  }, [resolved?.list?.columns, isWebApplications, isSieveScriptList, t]);
 
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
   const [total, setTotal] = useState<number | null>(null);
@@ -750,6 +771,9 @@ export function DynamicList({ viewName }: DynamicListProps) {
         if (isWebApplications && !properties.includes('enabled')) {
           properties.push('enabled');
         }
+        if (isSieveScriptList && !properties.includes('isActive')) {
+          properties.push('isActive');
+        }
         if (hasQuotaUsageColumn) {
           const quotaIdx = properties.indexOf('quotaUsage');
           if (quotaIdx !== -1) {
@@ -881,6 +905,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
       buildFilter,
       buildSort,
       isWebApplications,
+      isSieveScriptList,
       isAccountsList,
       hasQuotaUsageColumn,
       activeCountColumns,
