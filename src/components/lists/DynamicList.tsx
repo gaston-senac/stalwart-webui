@@ -87,6 +87,7 @@ import {
   REPORT_SUMMARY_COLUMNS,
 } from '@/lib/reportSummaries';
 import { ReportSummaryCell } from '@/components/lists/ReportSummaryCell';
+import { ChangeQuotaDialog } from '@/components/lists/ChangeQuotaDialog';
 import { buildCsv, downloadCsv, reactNodeToText } from '@/lib/csvExport';
 
 /** App-relative path → absolute URL path including Vite/Stalwart basename. */
@@ -677,6 +678,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
   const [currentAnchor, setCurrentAnchor] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectAllMode, setSelectAllMode] = useState(false);
+  const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
 
   const [filtersOpen, setFiltersOpen] = useState(() => Object.keys(readUrlFilters()).length > 0);
   const [filterValues, setFilterValues] = useState<Record<string, string>>(readUrlFilters);
@@ -1471,6 +1473,8 @@ export function DynamicList({ viewName }: DynamicListProps) {
 
   const hasMassActions = effectiveMassActions.length > 0;
   const hasItemActions = (list.itemActions?.length ?? 0) > 0;
+  // SCHEMA-DEVIATION: bulk-quota-change-action (see SCHEMA_DEVIATIONS.md)
+  const canBulkChangeQuota = hasQuotaUsageColumn && canUpdate;
 
   const pageStart = clientAllItems !== null ? clientPage * PAGE_SIZE : anchorStack.length * PAGE_SIZE;
   const rangeStart = pageStart + 1;
@@ -1749,7 +1753,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
           {list.subtitle && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{list.subtitle}</p>}
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-          {hasMassActions && selectedIds.size > 0 && (
+          {(hasMassActions || canBulkChangeQuota) && selectedIds.size > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -1758,6 +1762,14 @@ export function DynamicList({ viewName }: DynamicListProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {canBulkChangeQuota && (
+                  <>
+                    <DropdownMenuItem onClick={() => setQuotaDialogOpen(true)}>
+                      {t('list.changeQuota', 'Change quota…')}
+                    </DropdownMenuItem>
+                    {effectiveMassActions.length > 0 && <DropdownMenuSeparator />}
+                  </>
+                )}
                 {effectiveMassActions.map((action, idx) => {
                   if (action.type === 'separator') {
                     return <DropdownMenuSeparator key={`mass-sep-${idx}`} />;
@@ -2194,6 +2206,21 @@ export function DynamicList({ viewName }: DynamicListProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {canBulkChangeQuota && (
+        <ChangeQuotaDialog
+          open={quotaDialogOpen}
+          onOpenChange={setQuotaDialogOpen}
+          count={selectAllMode ? (total ?? selectedIds.size) : selectedIds.size}
+          onConfirm={(bytes) =>
+            executeMassAction({
+              type: 'setProperty',
+              label: t('list.changeQuota', 'Change quota…'),
+              properties: { 'quotas/maxDiskQuota': bytes },
+            })
+          }
+        />
+      )}
 
       <EnterpriseUpsell open={upsellOpen} onClose={() => setUpsellOpen(false)} />
     </div>

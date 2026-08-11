@@ -67,6 +67,13 @@ itself stays byte-for-byte alignable with upstream's version of the file.
 - **Why**: the `x:Application` list schema is not guaranteed to expose `enabled` as a list column, even though it's a real object property (fetched separately via `properties.push('enabled')`).
 - **Ideal fix**: the server's `x:Application` list schema always includes `enabled` as a real column; the fallback branch is deleted (only the reordering logic remains, which is not a deviation).
 
+### `bulk-quota-change-action` 🟡
+
+- **Where**: [`src/components/lists/DynamicList.tsx`](src/components/lists/DynamicList.tsx) — `canBulkChangeQuota` and the "Change quota…" `DropdownMenuItem`; [`src/components/lists/ChangeQuotaDialog.tsx`](src/components/lists/ChangeQuotaDialog.tsx)
+- **What**: adds a "Change quota…" bulk action to the Accounts and Groups lists (wherever the `quotaUsage` column already appears) that prompts for a new value, then applies it as a `quotas/maxDiskQuota` patch to every selected (or all-filter-matching) row via the same batched `executeMassAction` mechanism as any other bulk action.
+- **Why**: `list.massActions` in the schema only supports fixed-value actions (`properties` is a static object) — there's no way for the server to declare a mass action that needs a value prompted from the admin, so a bulk "set everyone's quota to X" action can't be expressed there today, even though `quotas/maxDiskQuota` itself is a perfectly real, mutable property.
+- **Ideal fix**: the schema grows a mass-action variant that names a target property (and its type/format) to prompt for, e.g. `{"type": "promptSetProperty", "property": "quotas/maxDiskQuota", "format": "size"}`; once that exists, this dialog and the `canBulkChangeQuota` branch are deleted in favor of the generic prompted-mass-action UI every such action would then share.
+
 ### `sieve-script-active-column-fallback` 🟡
 
 - **Where**: [`src/components/lists/DynamicList.tsx`](src/components/lists/DynamicList.tsx) — `displayColumns` and the property-fetch injection in `fetchData`, both gated on `isSieveScriptList`
