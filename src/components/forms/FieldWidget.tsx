@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-SEL
  */
 
-import { useState, useEffect, useMemo, useRef, type KeyboardEvent } from 'react';
+import { useState, useEffect, useMemo, useRef, lazy, Suspense, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBufferedValue, useResetOnChange } from '@/hooks/useBufferedValue';
 import ReactMarkdown from 'react-markdown';
@@ -43,6 +43,19 @@ import { ExpressionEditor } from '@/components/expression/ExpressionEditor';
 import { OtpAuthField } from '@/components/forms/OtpAuthField';
 import { SizeDisplay } from '@/components/common/SizeDisplay';
 
+// Code-split: CodeMirror + its Sieve tokenizer are only needed on the handful
+// of fields that actually hold Sieve script source (see SIEVE_SCRIPT_FIELDS
+// below), not worth adding to every other page's initial bundle.
+const LazySieveEditor = lazy(() => import('@/components/forms/SieveEditor'));
+
+function SieveEditorFallback() {
+  return (
+    <div className="flex h-40 items-center justify-center rounded-md border bg-field text-sm text-muted-foreground">
+      <Loader2 className="h-4 w-4 animate-spin" />
+    </div>
+  );
+}
+
 import {
   bytesToHuman,
   humanToBytes,
@@ -72,7 +85,21 @@ export interface FieldWidgetProps {
   readOnly: boolean;
   error?: string;
   schema: Schema;
+  /** Name of the object this field belongs to, used only to pick a specialized
+   * widget for fields the schema itself designates (e.g. rendering Sieve
+   * script content with syntax highlighting) — see SIEVE_SCRIPT_FIELDS below. */
+  objectName?: string;
 }
+
+// Real schema properties that hold Sieve script source text, keyed by the
+// object they belong to. Not a schema deviation: this only swaps in a nicer
+// widget for data the schema already describes, the same pattern used for
+// x:OtpAuth/x:Expression/x:Rate — see .agents/rules/schema-fidelity.md.
+const SIEVE_SCRIPT_FIELDS: Record<string, string> = {
+  SieveScript: 'blobId',
+  'x:SieveSystemScript': 'contents',
+  'x:SieveUserScript': 'contents',
+};
 
 function getRequiredMarker(field: Field, readOnly: boolean): 'required' | 'optional' | null {
   if (readOnly) return null;
@@ -92,12 +119,14 @@ function getRequiredMarker(field: Field, readOnly: boolean): 'required' | 'optio
 
 export function FieldWidget(props: FieldWidgetProps) {
   const { t } = useTranslation();
-  const { field, formField, value, onChange, readOnly, error, schema } = props;
+  const { field, formField, value, onChange, readOnly, error, schema, objectName } = props;
   const ft = field.type;
   const edition = useEffectiveEdition();
   const widgetContainerRef = useRef<HTMLDivElement>(null);
+  const sieveField = objectName != null && SIEVE_SCRIPT_FIELDS[objectName] === formField.name;
   const hasExpandableTextarea =
     !readOnly &&
+    !sieveField &&
     ((ft.type === 'string' && (ft.format === 'text' || ft.format === 'html' || ft.format === 'secretText')) ||
       ft.type === 'blobId');
   const hasOverflow = useTextareaOverflow(widgetContainerRef, hasExpandableTextarea);
@@ -121,6 +150,7 @@ export function FieldWidget(props: FieldWidgetProps) {
             minLength={ft.minLength}
             maxLength={ft.maxLength}
             nullable={ft.nullable}
+            sieveEditor={sieveField}
           />
         );
       case 'number':
@@ -151,7 +181,7 @@ export function FieldWidget(props: FieldWidgetProps) {
           />
         );
       case 'blobId':
-        return <BlobField value={value} onChange={onChange} readOnly={readOnly} />;
+        return <BlobField value={value} onChange={onChange} readOnly={readOnly} sieveEditor={sieveField} />;
       case 'objectId':
         return (
           <ObjectIdField
@@ -378,6 +408,7 @@ interface StringFieldProps {
   minLength?: number;
   maxLength?: number;
   nullable?: boolean;
+  sieveEditor?: boolean;
 }
 
 function StringField({
@@ -389,6 +420,7 @@ function StringField({
   minLength,
   maxLength,
   nullable,
+  sieveEditor,
 }: StringFieldProps) {
   const strValue = (value as string) ?? '';
 
@@ -399,6 +431,14 @@ function StringField({
       onChange(v);
     }
   };
+
+  if (sieveEditor && format === 'text') {
+    return (
+      <Suspense fallback={<SieveEditorFallback />}>
+        <LazySieveEditor value={strValue} onCommit={handleCommit} readOnly={readOnly} />
+      </Suspense>
+    );
+  }
 
   if (readOnly && format !== 'secret' && format !== 'secretText' && format !== 'color') {
     if (!strValue) {
@@ -1167,9 +1207,10 @@ interface BlobFieldProps {
   value: unknown;
   onChange: (value: unknown) => void;
   readOnly: boolean;
+  sieveEditor?: boolean;
 }
 
-function BlobField({ value, onChange, readOnly }: BlobFieldProps) {
+function BlobField({ value, onChange, readOnly, sieveEditor }: BlobFieldProps) {
   const { t } = useTranslation();
   const blobId = typeof value === 'string' ? value : null;
   const [content, setContent] = useState<string>('');
@@ -1228,13 +1269,19 @@ function BlobField({ value, onChange, readOnly }: BlobFieldProps) {
 
   return (
     <div className="space-y-1">
-      <BufferedTextarea
-        value={content}
-        onCommit={handleContentChange}
-        disabled={readOnly}
-        rows={8}
-        className="font-mono text-xs"
-      />
+      {sieveEditor ? (
+        <Suspense fallback={<SieveEditorFallback />}>
+          <LazySieveEditor value={content} onCommit={handleContentChange} readOnly={readOnly} />
+        </Suspense>
+      ) : (
+        <BufferedTextarea
+          value={content}
+          onCommit={handleContentChange}
+          disabled={readOnly}
+          rows={8}
+          className="font-mono text-xs"
+        />
+      )}
       {modified && (
         <p className="text-xs text-muted-foreground">
           {t('field.contentModified', 'Content modified (will be saved as a new blob)')}

@@ -829,6 +829,7 @@ export function DynamicForm({ viewName, objectId }: DynamicFormProps) {
                     readOnly={fieldReadOnly}
                     error={fieldError}
                     schema={schema}
+                    objectName={resolved.obj.objectName}
                   />
                 );
 
