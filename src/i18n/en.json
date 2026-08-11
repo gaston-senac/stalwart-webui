@@ -194,6 +194,7 @@
     "addItem": "Add item",
     "contentModified": "Content modified (will be saved as a new blob)",
     "enable": "Enable",
+    "expandToFitContent": "Expand to fit content",
     "key": "Key...",
     "loadingContent": "Loading content...",
     "noMatches": "No matches",

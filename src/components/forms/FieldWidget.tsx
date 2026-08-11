@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-SEL
  */
 
-import { useState, useEffect, useMemo, type KeyboardEvent } from 'react';
+import { useState, useEffect, useMemo, useRef, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBufferedValue, useResetOnChange } from '@/hooks/useBufferedValue';
 import ReactMarkdown from 'react-markdown';
@@ -23,7 +23,19 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 import { Calendar } from '@/components/ui/calendar';
 
-import { Plus, X, Eye, EyeOff, Loader2, Search, Check, ChevronRight, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import {
+  Plus,
+  X,
+  Eye,
+  EyeOff,
+  Loader2,
+  Search,
+  Check,
+  ChevronRight,
+  Calendar as CalendarIcon,
+  Clock,
+  UnfoldVertical,
+} from 'lucide-react';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -83,6 +95,12 @@ export function FieldWidget(props: FieldWidgetProps) {
   const { field, formField, value, onChange, readOnly, error, schema } = props;
   const ft = field.type;
   const edition = useEffectiveEdition();
+  const widgetContainerRef = useRef<HTMLDivElement>(null);
+  const hasExpandableTextarea =
+    !readOnly &&
+    ((ft.type === 'string' && (ft.format === 'text' || ft.format === 'html' || ft.format === 'secretText')) ||
+      ft.type === 'blobId');
+  const hasOverflow = useTextareaOverflow(widgetContainerRef, hasExpandableTextarea);
 
   if (field.enterprise && edition === 'oss') return null;
 
@@ -216,7 +234,7 @@ export function FieldWidget(props: FieldWidgetProps) {
 
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
         <Label className="text-sm font-medium">
           {formField.label}
           {marker === 'required' && (
@@ -230,16 +248,72 @@ export function FieldWidget(props: FieldWidgetProps) {
             </span>
           )}
         </Label>
+        {hasExpandableTextarea && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            tabIndex={-1}
+            disabled={!hasOverflow}
+            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+            // Keep focus on the textarea so this click doesn't fire its onBlur commit first —
+            // that re-render can swap the button's DOM node mid-click and swallow the click.
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              const el = widgetContainerRef.current?.querySelector('textarea');
+              if (!el) return;
+              // scrollHeight excludes borders, but height is set on a border-box element — add
+              // them back or the box lands ~2px short and still (barely) scrolls.
+              const style = getComputedStyle(el);
+              const borderY = parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
+              // Shrink first so scrollHeight reflects content, not the current (possibly larger) height.
+              el.style.height = 'auto';
+              el.style.height = `${el.scrollHeight + borderY}px`;
+            }}
+            title={t('field.expandToFitContent', 'Expand to fit content')}
+          >
+            <UnfoldVertical className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </div>
       {field.description && (
         <div className="text-xs text-muted-foreground prose prose-sm max-w-none [&_p]:m-0">
           <ReactMarkdown>{field.description.replace(/\\n/g, '\n')}</ReactMarkdown>
         </div>
       )}
-      {widget}
+      {hasExpandableTextarea ? <div ref={widgetContainerRef}>{widget}</div> : widget}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
+}
+
+// Tracks whether a field's textarea currently overflows (i.e. has a scrollbar), so the
+// "expand to fit" button can stay disabled when there's nothing to expand. Content can change
+// without the textarea itself resizing (typing, an async blob load, a manual drag-resize), so a
+// lightweight poll is used rather than a single observer type that would miss some of those cases.
+function useTextareaOverflow(containerRef: React.RefObject<HTMLElement | null>, enabled: boolean): boolean {
+  const [hasOverflow, setHasOverflow] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const checkOverflow = () => {
+      const el = containerRef.current?.querySelector('textarea');
+      const overflowing = !!el && el.scrollHeight > el.clientHeight + 1;
+      setHasOverflow((prev) => (prev === overflowing ? prev : overflowing));
+    };
+
+    // Deferred (rather than called directly here) so the effect body itself never calls
+    // setState synchronously; the poll after it keeps this current as content/size changes.
+    const rafId = requestAnimationFrame(checkOverflow);
+    const interval = setInterval(checkOverflow, 300);
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearInterval(interval);
+    };
+  }, [containerRef, enabled]);
+
+  return enabled && hasOverflow;
 }
 
 interface BufferedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
@@ -278,7 +352,7 @@ interface BufferedTextareaProps extends Omit<React.TextareaHTMLAttributes<HTMLTe
   onCommit: (v: string) => void;
 }
 
-function BufferedTextarea({ value, onCommit, onBlur, ...rest }: BufferedTextareaProps) {
+function BufferedTextarea({ value, onCommit, onBlur, className, ...rest }: BufferedTextareaProps) {
   const [local, setLocal] = useBufferedValue(value);
 
   return (
@@ -290,6 +364,7 @@ function BufferedTextarea({ value, onCommit, onBlur, ...rest }: BufferedTextarea
         if (local !== value) onCommit(local);
         onBlur?.(e);
       }}
+      className={className}
     />
   );
 }
