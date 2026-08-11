@@ -22,6 +22,7 @@ import {
   RotateCcw,
   RefreshCw,
   CornerDownRight,
+  Download,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -86,6 +87,7 @@ import {
   REPORT_SUMMARY_COLUMNS,
 } from '@/lib/reportSummaries';
 import { ReportSummaryCell } from '@/components/lists/ReportSummaryCell';
+import { buildCsv, downloadCsv, reactNodeToText } from '@/lib/csvExport';
 
 /** App-relative path → absolute URL path including Vite/Stalwart basename. */
 function appHref(path: string): string {
@@ -266,12 +268,23 @@ function formatUserRole(item: Record<string, unknown>, schema: Schema): React.Re
   return type;
 }
 
-function renderQuotaUsage(item: Record<string, unknown>, t: TFn): React.ReactNode {
+function computeQuotaUsage(item: Record<string, unknown>): { used: number; limit: number } {
   const rawUsed = typeof item.usedDiskQuota === 'number' ? item.usedDiskQuota : 0;
   const used = Number.isFinite(rawUsed) ? rawUsed : 0;
   const quotas = item.quotas as Record<string, unknown> | undefined;
   const rawLimit = quotas && typeof quotas.maxDiskQuota === 'number' ? quotas.maxDiskQuota : 0;
   const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 0;
+  return { used, limit };
+}
+
+function quotaUsageText(item: Record<string, unknown>, t: TFn): string {
+  const { used, limit } = computeQuotaUsage(item);
+  const limitLabel = limit ? formatSize(limit) : t('list.unlimitedQuota', '∞');
+  return `${formatSize(used)} / ${limitLabel}`;
+}
+
+function renderQuotaUsage(item: Record<string, unknown>, t: TFn): React.ReactNode {
+  const { used, limit } = computeQuotaUsage(item);
   const limitLabel = limit ? formatSize(limit) : t('list.unlimitedQuota', '∞');
 
   const text =
@@ -781,6 +794,55 @@ export function DynamicList({ viewName }: DynamicListProps) {
     return [{ property: sort.field, isAscending: sort.ascending }];
   }, [sort]);
 
+  // Real JMAP properties to fetch for a given set of (possibly synthetic)
+  // list columns — shared by the paginated list fetch and CSV export, so
+  // both request exactly the data their columns actually need.
+  const buildFetchProperties = useCallback(
+    (columns: Array<{ name: string }>): string[] => {
+      const properties = ['id', ...columns.map((c) => c.name)];
+      if (isWebApplications && !properties.includes('enabled')) {
+        properties.push('enabled');
+      }
+      if (isSieveScriptList && !properties.includes('isActive')) {
+        properties.push('isActive');
+      }
+      if (hasQuotaUsageColumn) {
+        const quotaIdx = properties.indexOf('quotaUsage');
+        if (quotaIdx !== -1) {
+          properties.splice(quotaIdx, 1, 'usedDiskQuota', 'quotas');
+        }
+      }
+      for (const countCol of activeCountColumns) {
+        const idx = properties.indexOf(countCol);
+        if (idx !== -1) {
+          properties.splice(idx, 1, COUNT_COLUMN_SOURCES[countCol]);
+        }
+      }
+      // SCHEMA-DEVIATION: report-summary-columns (see SCHEMA_DEVIATIONS.md)
+      // Replace every synthetic summary column with a single `report` fetch.
+      if (needsReportProperty) {
+        let reportInserted = false;
+        for (let i = properties.length - 1; i >= 0; i--) {
+          if (!isReportSummaryColumn(properties[i])) continue;
+          if (!reportInserted) {
+            properties[i] = 'report';
+            reportInserted = true;
+          } else {
+            properties.splice(i, 1);
+          }
+        }
+        if (!reportInserted && !properties.includes('report')) {
+          properties.push('report');
+        }
+      }
+      if (isMailboxList && !properties.includes('parentId')) {
+        properties.push('parentId');
+      }
+      return properties;
+    },
+    [isWebApplications, isSieveScriptList, hasQuotaUsageColumn, activeCountColumns, needsReportProperty, isMailboxList],
+  );
+
   const fetchData = useCallback(
     async (anchor: string | null, anchorOffset: number = 1) => {
       if (!resolved || !resolved.list || !schema) return;
@@ -791,45 +853,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
 
       try {
         const accountId = getAccountId(obj.objectName);
-        const properties = ['id', ...list.columns.map((c) => c.name)];
-        if (isWebApplications && !properties.includes('enabled')) {
-          properties.push('enabled');
-        }
-        if (isSieveScriptList && !properties.includes('isActive')) {
-          properties.push('isActive');
-        }
-        if (hasQuotaUsageColumn) {
-          const quotaIdx = properties.indexOf('quotaUsage');
-          if (quotaIdx !== -1) {
-            properties.splice(quotaIdx, 1, 'usedDiskQuota', 'quotas');
-          }
-        }
-        for (const countCol of activeCountColumns) {
-          const idx = properties.indexOf(countCol);
-          if (idx !== -1) {
-            properties.splice(idx, 1, COUNT_COLUMN_SOURCES[countCol]);
-          }
-        }
-        // SCHEMA-DEVIATION: report-summary-columns (see SCHEMA_DEVIATIONS.md)
-        // Replace every synthetic summary column with a single `report` fetch.
-        if (needsReportProperty) {
-          let reportInserted = false;
-          for (let i = properties.length - 1; i >= 0; i--) {
-            if (!isReportSummaryColumn(properties[i])) continue;
-            if (!reportInserted) {
-              properties[i] = 'report';
-              reportInserted = true;
-            } else {
-              properties.splice(i, 1);
-            }
-          }
-          if (!reportInserted && !properties.includes('report')) {
-            properties.push('report');
-          }
-        }
-        if (isMailboxList && !properties.includes('parentId')) {
-          properties.push('parentId');
-        }
+        const properties = buildFetchProperties(list.columns);
         const filter = buildFilter();
         const sortArr = buildSort();
 
@@ -928,18 +952,109 @@ export function DynamicList({ viewName }: DynamicListProps) {
       schema,
       buildFilter,
       buildSort,
-      isWebApplications,
-      isSieveScriptList,
+      buildFetchProperties,
       isAccountsList,
-      hasQuotaUsageColumn,
-      activeCountColumns,
-      needsReportProperty,
       isMailboxList,
       clientSortField,
       sort,
       activeClientFilters,
     ],
   );
+
+  const [exporting, setExporting] = useState(false);
+
+  // Exports every row currently matching the list's filters (not just the
+  // loaded page) as CSV, using the same columns and formatting the table
+  // shows — reuses renderCellValue's output via reactNodeToText rather than
+  // a parallel formatter, so display and export can't drift apart.
+  const handleExportCsv = useCallback(async () => {
+    if (!resolved || !resolved.list || !schema) return;
+    const { obj, list, schema: resolvedSchema } = resolved;
+    const columns = displayColumns;
+    if (columns.length === 0) return;
+
+    setExporting(true);
+    try {
+      const fieldsRecord = getFieldsRecord(resolvedSchema);
+      let rowsSource: Record<string, unknown>[];
+      if (clientAllItems !== null) {
+        rowsSource = clientAllItems;
+      } else {
+        const accountId = getAccountId(obj.objectName);
+        const properties = buildFetchProperties(columns);
+        const filter = buildFilter();
+        const sortArr = buildSort();
+        const { list: fetched } = await jmapQueryAllAndGet(
+          obj.objectName,
+          accountId,
+          { filter: Object.keys(filter).length > 0 ? filter : undefined, sort: sortArr },
+          properties,
+        );
+        rowsSource = fetched;
+      }
+
+      const formatColumn = (colName: string, item: Record<string, unknown>): string => {
+        if (isWebApplications && colName === 'enabled' && !fieldsRecord[colName]) {
+          return item.enabled === true ? t('list.csvYes', 'Yes') : t('list.csvNo', 'No');
+        }
+        if (isAccountsList && colName === 'roles') {
+          return reactNodeToText(formatUserRole(item, schema));
+        }
+        if (hasQuotaUsageColumn && colName === 'quotaUsage') {
+          return quotaUsageText(item, t);
+        }
+        if (colName in COUNT_COLUMN_SOURCES && activeCountColumns.includes(colName)) {
+          return String(getCountColumnValue(colName, item));
+        }
+        if (needsReportProperty && isReportSummaryColumn(colName)) {
+          const value = getReportSummaryValue(colName, item);
+          if (colName === REPORT_SUMMARY_COLUMNS.arfFeedbackType) {
+            const raw = String(value);
+            if (raw === '-') return '';
+            return schema!.enums?.ArfFeedbackType?.find((e) => e.name === raw)?.label ?? raw;
+          }
+          return String(value);
+        }
+        if (isMailboxList && colName === 'name') {
+          return String(item.name ?? '');
+        }
+        return reactNodeToText(
+          renderCellValue(item[colName], fieldsRecord[colName], colName, schema!, obj.objectName, getDisplayName),
+        );
+      };
+
+      const headers = columns.map((c) => c.label);
+      const rows = rowsSource.map((item) => columns.map((col) => formatColumn(col.name, item)));
+      const csv = buildCsv(headers, rows);
+      const datePart = new Date().toISOString().slice(0, 10);
+      downloadCsv(`${list.pluralName || viewName}-${datePart}.csv`, csv);
+      toast({
+        title: t('list.exportSuccess', 'Exported {{count}} rows to CSV', { count: rowsSource.length }),
+        variant: 'success',
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setExporting(false);
+    }
+  }, [
+    resolved,
+    schema,
+    displayColumns,
+    clientAllItems,
+    buildFetchProperties,
+    buildFilter,
+    buildSort,
+    isWebApplications,
+    isAccountsList,
+    hasQuotaUsageColumn,
+    activeCountColumns,
+    needsReportProperty,
+    isMailboxList,
+    viewName,
+    t,
+    getDisplayName,
+  ]);
 
   useEffect(() => {
     if (!resolved?.list) return;
@@ -1674,6 +1789,17 @@ export function DynamicList({ viewName }: DynamicListProps) {
                 })}
               </DropdownMenuContent>
             </DropdownMenu>
+          )}
+
+          {displayColumns.length > 0 && (
+            <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={exporting}>
+              {exporting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              {t('list.exportCsv', 'Export CSV')}
+            </Button>
           )}
 
           {canCreate && obj.objectType.type === 'object' && createPath && (
