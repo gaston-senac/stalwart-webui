@@ -274,16 +274,40 @@ function renderQuotaUsage(item: Record<string, unknown>, t: TFn): React.ReactNod
   const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 0;
   const limitLabel = limit ? formatSize(limit) : t('list.unlimitedQuota', '∞');
 
-  if (used >= 0) {
-    return `${formatSize(used)} / ${limitLabel}`;
+  const text =
+    used >= 0 ? (
+      `${formatSize(used)} / ${limitLabel}`
+    ) : (
+      <span className="inline-flex items-center gap-1.5">
+        <SizeDisplay bytes={used} />
+        <span className="text-muted-foreground">/</span>
+        <span>{limitLabel}</span>
+      </span>
+    );
+
+  // A bar only means something against a finite quota with a trustworthy
+  // (non-negative — see SizeDisplay) usage counter.
+  if (used < 0 || limit <= 0) {
+    return text;
   }
 
+  const percent = Math.min(100, (used / limit) * 100);
+  const barColor = percent >= 90 ? 'bg-destructive' : percent >= 70 ? 'bg-amber-500' : 'bg-green-600';
+
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <SizeDisplay bytes={used} />
-      <span className="text-muted-foreground">/</span>
-      <span>{limitLabel}</span>
-    </span>
+    <div className="flex min-w-[8rem] flex-col gap-1">
+      <span>{text}</span>
+      <div
+        className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+        role="progressbar"
+        aria-valuenow={Math.round(percent)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={t('list.quotaUsagePercent', 'Quota used')}
+      >
+        <div className={`h-full rounded-full ${barColor}`} style={{ width: `${percent}%` }} />
+      </div>
+    </div>
   );
 }
 
