@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-SEL
  */
 
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense } from 'react';
 import { useSchemaStore } from '@/stores/schemaStore';
-import { useCacheStore } from '@/stores/cacheStore';
 import { useAccountStore } from '@/stores/accountStore';
 import { resolveObject } from '@/lib/schemaResolver';
 import { DynamicList } from '@/components/lists/DynamicList';
@@ -52,11 +51,10 @@ export function MainContent({ viewName, id, section }: MainContentProps) {
 
 function MainContentView({ viewName, id, section }: MainContentProps) {
   const schema = useSchemaStore((s) => s.schema);
-  const invalidateAllObjectLists = useCacheStore((s) => s.invalidateAllObjectLists);
 
-  useEffect(() => {
-    invalidateAllObjectLists();
-  }, [viewName, invalidateAllObjectLists]);
+  // Object-list combobox caches are invalidated after create/update/destroy
+  // (see DynamicForm / DynamicList) instead of wiping every list on each
+  // view change — that was forcing unrelated dropdowns to refetch.
 
   if (!viewName) {
     return (

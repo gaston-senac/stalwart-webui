@@ -1349,6 +1349,10 @@ export function DynamicList({ viewName }: DynamicListProps) {
           toast({ title: summary.title, description: summary.description, variant: summary.variant });
         }
 
+        if (totalSuccess > 0) {
+          useCacheStore.getState().invalidateRelatedObjectCache(obj.objectName);
+        }
+
         setSelectedIds(new Set());
         setSelectAllMode(false);
         fetchData(currentAnchor, 0);

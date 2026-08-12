@@ -23,6 +23,12 @@ interface CacheState {
   setObjectList: (key: string, entries: ObjectListEntry[]) => void;
   getObjectList: (key: string) => ObjectListEntry[] | undefined;
   invalidateObjectList: (key: string) => void;
+  /**
+   * Drop combobox caches and display names for an object type and its views
+   * (`x:Account` → also `x:Account/User`, `x:Account/Group`). Prefer this over
+   * wiping every list on navigation.
+   */
+  invalidateRelatedObjectCache: (objectName: string) => void;
   invalidateAllObjectLists: () => void;
   clearAll: () => void;
 }
@@ -70,6 +76,20 @@ export const useCacheStore = create<CacheState>()((set, get) => ({
       const { [key]: _removed, ...rest } = state.objectLists;
       void _removed;
       return { objectLists: rest };
+    });
+  },
+
+  invalidateRelatedObjectCache: (objectName) => {
+    set((state) => {
+      const objectLists = { ...state.objectLists };
+      for (const key of Object.keys(objectLists)) {
+        if (key === objectName || key.startsWith(`${objectName}/`)) {
+          delete objectLists[key];
+        }
+      }
+      const { [objectName]: _removed, ...displayNames } = state.displayNames;
+      void _removed;
+      return { objectLists, displayNames };
     });
   },
 

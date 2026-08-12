@@ -35,6 +35,7 @@ import { ArrowLeft, Save, Trash2, Loader2 } from 'lucide-react';
 
 import { useSchemaStore } from '@/stores/schemaStore';
 import { useAccountStore } from '@/stores/accountStore';
+import { useCacheStore } from '@/stores/cacheStore';
 import { usePermissions } from '@/hooks/usePermissions';
 import {
   resolveObject,
@@ -495,6 +496,7 @@ export function DynamicForm({ viewName, objectId }: DynamicFormProps) {
         if (setResult.created && setResult.created['new-0']) {
           const createdData = setResult.created['new-0'];
           const newId = createdData.id as string;
+          useCacheStore.getState().invalidateRelatedObjectCache(obj.objectName);
 
           const noisyKeys = new Set(['id', 'blobId']);
           const extraKeys = Object.keys(createdData).filter((k) => !noisyKeys.has(k));
@@ -594,6 +596,7 @@ export function DynamicForm({ viewName, objectId }: DynamicFormProps) {
         const setResult = setResponse[1] as unknown as JmapSetResponse;
 
         if (setResult.updated && updateId in setResult.updated) {
+          useCacheStore.getState().invalidateRelatedObjectCache(obj.objectName);
           toast({
             title: t('form.savedSuccess', 'Saved successfully'),
             variant: 'success',
@@ -655,6 +658,7 @@ export function DynamicForm({ viewName, objectId }: DynamicFormProps) {
       const setResult = setResponse[1] as unknown as JmapSetResponse;
 
       if (setResult.destroyed && setResult.destroyed.includes(objectId)) {
+        useCacheStore.getState().invalidateRelatedObjectCache(obj.objectName);
         const list = resolveList(schema!, viewName, obj.objectName);
         const label = list?.singularName ?? obj.objectType.description;
         toast({

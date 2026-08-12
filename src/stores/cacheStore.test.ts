@@ -9,7 +9,7 @@ import { useCacheStore } from './cacheStore';
 
 describe('cacheStore', () => {
   beforeEach(() => {
-    useCacheStore.setState({ displayNames: {} });
+    useCacheStore.setState({ displayNames: {}, objectLists: {} });
   });
 
   describe('setDisplayNames', () => {
@@ -89,6 +89,26 @@ describe('cacheStore', () => {
       expect(state.getDisplayName('user', 'u1')).toBe('Alice');
       expect(state.getDisplayName('domain', 'd1')).toBe('example.com');
       expect(state.getDisplayName('group', 'g1')).toBe('Admins');
+    });
+  });
+
+  describe('invalidateRelatedObjectCache', () => {
+    it('drops object lists and display names for an object and its views', () => {
+      const { setDisplayNames, setObjectList, invalidateRelatedObjectCache } = useCacheStore.getState();
+      setDisplayNames('x:Account', { a1: 'Alice' });
+      setDisplayNames('x:Domain', { d1: 'example.org' });
+      setObjectList('x:Account', [{ id: 'a1', label: 'Alice' }]);
+      setObjectList('x:Account/User', [{ id: 'a1', label: 'Alice' }]);
+      setObjectList('x:Domain', [{ id: 'd1', label: 'example.org' }]);
+
+      invalidateRelatedObjectCache('x:Account');
+
+      const state = useCacheStore.getState();
+      expect(state.displayNames['x:Account']).toBeUndefined();
+      expect(state.displayNames['x:Domain']).toEqual({ d1: 'example.org' });
+      expect(state.objectLists['x:Account']).toBeUndefined();
+      expect(state.objectLists['x:Account/User']).toBeUndefined();
+      expect(state.objectLists['x:Domain']).toEqual([{ id: 'd1', label: 'example.org' }]);
     });
   });
 });
