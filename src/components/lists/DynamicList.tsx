@@ -24,6 +24,7 @@ import {
   CornerDownRight,
   Download,
   Inbox,
+  Bookmark,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -90,6 +91,14 @@ import {
 import { ReportSummaryCell } from '@/components/lists/ReportSummaryCell';
 import { ChangeQuotaDialog } from '@/components/lists/ChangeQuotaDialog';
 import { buildCsv, downloadCsv, reactNodeToText } from '@/lib/csvExport';
+import {
+  deleteLogFilterPreset,
+  listLogFilterPresets,
+  saveLogFilterPreset,
+  type LogFilterPreset,
+} from '@/lib/logFilterPresets';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 /** App-relative path → absolute URL path including Vite/Stalwart basename. */
 function appHref(path: string): string {
@@ -105,6 +114,8 @@ const ENUM_COMBOBOX_THRESHOLD = 15;
 // Manual refresh on the Logs list is rate-limited to avoid hammering the
 // server if someone leaves it clicked repeatedly.
 const REFRESH_COOLDOWN_MS = 5000;
+/** Auto-refresh interval for Log Entries (must be ≥ refresh cooldown). */
+const LOG_AUTO_REFRESH_MS = 10_000;
 
 function isClientOnlyFilter(f: FilterDef): boolean {
   return f.type === 'enum' && isClientOnlyFilterEnum(f);
@@ -719,6 +730,10 @@ export function DynamicList({ viewName }: DynamicListProps) {
 
   const [refreshOnCooldown, setRefreshOnCooldown] = useState(false);
   const refreshCooldownTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [logAutoRefresh, setLogAutoRefresh] = useState(false);
+  const [logPresets, setLogPresets] = useState<LogFilterPreset[]>(() =>
+    typeof localStorage !== 'undefined' ? listLogFilterPresets() : [],
+  );
 
   useEffect(() => {
     return () => {
@@ -1137,6 +1152,18 @@ export function DynamicList({ viewName }: DynamicListProps) {
     fetchData(currentAnchor, 0);
     refreshCooldownTimer.current = setTimeout(() => setRefreshOnCooldown(false), REFRESH_COOLDOWN_MS);
   }, [refreshOnCooldown, fetchData, currentAnchor]);
+
+  useEffect(() => {
+    if (!isLogEntries || !logAutoRefresh) return;
+
+    const tick = () => {
+      if (document.visibilityState === 'hidden') return;
+      handleRefresh();
+    };
+
+    const id = window.setInterval(tick, LOG_AUTO_REFRESH_MS);
+    return () => window.clearInterval(id);
+  }, [isLogEntries, logAutoRefresh, handleRefresh]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -1837,22 +1864,34 @@ export function DynamicList({ viewName }: DynamicListProps) {
               </Button>
             </CollapsibleTrigger>
             {isLogEntries && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={handleRefresh}
-                disabled={refreshOnCooldown || loading}
-                title={
-                  refreshOnCooldown
-                    ? t('list.refreshCooldown', 'Please wait a few seconds before refreshing again')
-                    : undefined
-                }
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                {t('list.refresh', 'Refresh')}
-              </Button>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="log-auto-refresh"
+                    checked={logAutoRefresh}
+                    onCheckedChange={setLogAutoRefresh}
+                  />
+                  <Label htmlFor="log-auto-refresh" className="text-sm font-normal">
+                    {t('list.autoRefresh', 'Auto-refresh')}
+                  </Label>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={handleRefresh}
+                  disabled={refreshOnCooldown || loading}
+                  title={
+                    refreshOnCooldown
+                      ? t('list.refreshCooldown', 'Please wait a few seconds before refreshing again')
+                      : undefined
+                  }
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  {t('list.refresh', 'Refresh')}
+                </Button>
+              </div>
             )}
           </div>
           <CollapsibleContent>
@@ -1860,15 +1899,82 @@ export function DynamicList({ viewName }: DynamicListProps) {
               <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
                 {list.filters.map((filterDef) => renderFilter(filterDef))}
               </div>
-              <div className="flex items-center justify-end gap-2 border-t px-5 py-3">
-                <Button type="button" variant="ghost" size="sm" onClick={resetFilters} disabled={loading}>
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  {t('list.resetFilters', 'Reset')}
-                </Button>
-                <Button type="button" size="sm" onClick={applyFilters} disabled={loading}>
-                  <Search className="mr-2 h-4 w-4" />
-                  {t('list.searchFilters', 'Search')}
-                </Button>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t px-5 py-3">
+                {isLogEntries ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button type="button" variant="outline" size="sm" disabled={loading}>
+                          <Bookmark className="mr-2 h-4 w-4" />
+                          {t('list.filterPresets', 'Presets')}
+                          <ChevronDown className="ml-1 h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-56">
+                        {logPresets.length === 0 ? (
+                          <DropdownMenuItem disabled>
+                            {t('list.filterPresetsEmpty', 'No saved presets')}
+                          </DropdownMenuItem>
+                        ) : (
+                          logPresets.map((preset) => (
+                            <DropdownMenuItem
+                              key={preset.id}
+                              className="flex items-center justify-between gap-2"
+                              onSelect={() => {
+                                setFilterValues(preset.filters);
+                                setAppliedFilters(preset.filters);
+                                setFiltersOpen(true);
+                              }}
+                            >
+                              <span className="truncate">{preset.name}</span>
+                              <button
+                                type="button"
+                                className="text-muted-foreground hover:text-destructive"
+                                aria-label={t('list.filterPresetDelete', 'Delete preset')}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  deleteLogFilterPreset(preset.id);
+                                  setLogPresets(listLogFilterPresets());
+                                }}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </DropdownMenuItem>
+                          ))
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={loading || Object.keys(appliedFilters).length === 0}
+                      onClick={() => {
+                        const name = window.prompt(
+                          t('list.filterPresetNamePrompt', 'Name for this filter preset'),
+                        );
+                        if (!name?.trim()) return;
+                        saveLogFilterPreset(name, appliedFilters);
+                        setLogPresets(listLogFilterPresets());
+                      }}
+                    >
+                      {t('list.filterPresetSave', 'Save preset')}
+                    </Button>
+                  </div>
+                ) : (
+                  <div />
+                )}
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="ghost" size="sm" onClick={resetFilters} disabled={loading}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    {t('list.resetFilters', 'Reset')}
+                  </Button>
+                  <Button type="button" size="sm" onClick={applyFilters} disabled={loading}>
+                    <Search className="mr-2 h-4 w-4" />
+                    {t('list.searchFilters', 'Search')}
+                  </Button>
+                </div>
               </div>
             </div>
           </CollapsibleContent>

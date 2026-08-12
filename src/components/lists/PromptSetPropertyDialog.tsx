@@ -22,24 +22,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useResetOnChange } from '@/hooks/useBufferedValue';
 import { SIZE_UNITS, humanToBytes } from '@/lib/durationFormat';
+import type { PromptSetPropertyConfig } from '@/components/lists/promptSetProperty';
 
 /**
  * SCHEMA-DEVIATION: bulk-quota-change-action (see SCHEMA_DEVIATIONS.md)
  *
- * Client-only prompted mass-action shape (ideal upstream: schema
+ * Client-only prompted mass-action dialog (ideal upstream: schema
  * `promptSetProperty`). Supports `format: 'size'` today; add formats here
  * rather than one-off dialogs per property.
  */
-export type PromptPropertyFormat = 'size';
-
-export interface PromptSetPropertyConfig {
-  property: string;
-  format: PromptPropertyFormat;
-  titleKey: [string, string];
-  descriptionOneKey: [string, string];
-  descriptionOtherKey: [string, string];
-}
-
 interface PromptSetPropertyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -47,17 +38,6 @@ interface PromptSetPropertyDialogProps {
   config: PromptSetPropertyConfig;
   onConfirm: (value: unknown) => void;
 }
-
-export const QUOTA_PROMPT_CONFIG: PromptSetPropertyConfig = {
-  property: 'quotas/maxDiskQuota',
-  format: 'size',
-  titleKey: ['list.changeQuotaTitle', 'Change disk quota'],
-  descriptionOneKey: ['list.changeQuotaDescription_one', 'Set a new maximum disk quota for {{count}} account.'],
-  descriptionOtherKey: [
-    'list.changeQuotaDescription_other',
-    'Set a new maximum disk quota for {{count}} accounts.',
-  ],
-};
 
 export function PromptSetPropertyDialog({
   open,

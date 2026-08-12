@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file. This projec
 - Overview attention badges: queue backlog, certificates expired/expiring soon (30 days), and sampled DMARC/TLS/ARF rows with quarantine/reject/failed/incidents.
 - Getting Started v2: optional DMARC-reports check, SPF/DMARC docs, and schema-resolved deep links to spam settings / listeners.
 - Generic prompted mass-action dialog (`PromptSetPropertyDialog`); bulk quota change is now a thin consumer of it.
+- Log Entries: named filter presets (localStorage) and optional auto-refresh every 10s (respects refresh cooldown).
 
 ## [1.1.4] - 2026-08-04
 

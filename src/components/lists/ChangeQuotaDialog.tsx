@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-SEL
  */
 
-import {
-  PromptSetPropertyDialog,
-  QUOTA_PROMPT_CONFIG,
-} from '@/components/lists/PromptSetPropertyDialog';
+import { PromptSetPropertyDialog } from '@/components/lists/PromptSetPropertyDialog';
+import { QUOTA_PROMPT_CONFIG } from '@/components/lists/promptSetProperty';
 
 interface ChangeQuotaDialogProps {
   open: boolean;
