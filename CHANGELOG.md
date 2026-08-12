@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file. This projec
 - Queued messages list: empty and backlog guidance with links to Delivery Trace and Log Entries when those views are accessible.
 - List accessibility: column `scope`/`aria-sort`, labeled sort controls, filter label association + focus on open, keyboard-activatable rows, row-actions label, and visible Enterprise field hints.
 - Appearance: list density (Comfortable / Compact) persisted with other UI prefs and applied to admin list tables.
+- Upstream sync playbook (`docs/UPSTREAM_SYNC.md`) for merging `stalwartlabs/webui` while revalidating `SCHEMA_DEVIATIONS.md`.
 
 ## [1.1.4] - 2026-08-04
 

@@ -39,6 +39,7 @@ scripts/*
 !SCHEMA_DEVIATIONS.md
 !DEVELOPMENT.md
 !.agents/rules/*.md
+!docs/UPSTREAM_SYNC.md
 /SPEC-*
 # Tool-generated artifacts during agent sessions
 .playwright-mcp/
