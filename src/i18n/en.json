@@ -87,12 +87,18 @@
     "from": "From",
     "liveMetricsDisconnected": "Live metrics stream disconnected after multiple retries.",
     "liveMetricsFailed": "Failed to connect to live metrics.",
+    "noDashboardsConfigured": "No dashboards configured.",
     "preset24h": "Last 24 hours",
     "preset30d": "Last 30 days",
     "preset7d": "Last 7 days",
     "preset90d": "Last 90 days",
     "title": "Dashboard",
     "to": "To"
+  },
+  "mainContent": {
+    "selectView": "Select a view from the sidebar.",
+    "unknownComponent": "Unknown component: {{name}}",
+    "unknownView": "Unknown view: {{name}}"
   },
   "deliveryTrace": {
     "attemptCount_one": "{{count}} attempt",

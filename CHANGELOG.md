@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file. This projec
 - Fetch-all list paths (client filters/sort, mailbox tree, problems-only, CSV export): warn above 2 000 matching rows and refuse above 10 000.
 - Dev server restarts automatically when `.env.development.local` changes (e.g. after regenerating a token).
 - Command palette: CustomComponent pages (Overview, Getting Started, …) and Appearance/Changelog are searchable; fork pages get keywords (`queue`, `dkim`, `theme`, …).
+- Move remaining fork UI strings (empty main content, unknown view/component, empty dashboard) into `en.json`.
 
 ## [1.1.4] - 2026-08-04
 

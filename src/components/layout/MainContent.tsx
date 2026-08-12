@@ -5,6 +5,7 @@
  */
 
 import { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSchemaStore } from '@/stores/schemaStore';
 import { useAccountStore } from '@/stores/accountStore';
 import { resolveObject } from '@/lib/schemaResolver';
@@ -50,6 +51,7 @@ export function MainContent({ viewName, id, section }: MainContentProps) {
 }
 
 function MainContentView({ viewName, id, section }: MainContentProps) {
+  const { t } = useTranslation();
   const schema = useSchemaStore((s) => s.schema);
 
   // Object-list combobox caches are invalidated after create/update/destroy
@@ -58,7 +60,9 @@ function MainContentView({ viewName, id, section }: MainContentProps) {
 
   if (!viewName) {
     return (
-      <div className="flex items-center justify-center p-8 text-muted-foreground">Select a view from the sidebar.</div>
+      <div className="flex items-center justify-center p-8 text-muted-foreground">
+        {t('mainContent.selectView', 'Select a view from the sidebar.')}
+      </div>
     );
   }
 
@@ -87,18 +91,26 @@ function MainContentView({ viewName, id, section }: MainContentProps) {
     }
     return (
       <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
-        Unknown component: {componentName}
+        {t('mainContent.unknownComponent', 'Unknown component: {{name}}', { name: componentName })}
       </div>
     );
   }
 
   if (!schema) {
-    return <div className="flex items-center justify-center p-8 text-muted-foreground">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center p-8 text-muted-foreground">
+        {t('common.loading', 'Loading...')}
+      </div>
+    );
   }
 
   const resolved = resolveObject(schema, viewName);
   if (!resolved) {
-    return <div className="flex items-center justify-center p-8 text-destructive">Unknown view: {viewName}</div>;
+    return (
+      <div className="flex items-center justify-center p-8 text-destructive">
+        {t('mainContent.unknownView', 'Unknown view: {{name}}', { name: viewName })}
+      </div>
+    );
   }
 
   if (resolved.objectName === 'x:Action') {
