@@ -20,8 +20,10 @@ import { isOnboardingComplete, ONBOARDING_VIEW_NAME } from '@/features/onboardin
 /**
  * SCHEMA-DEVIATION: onboarding-checklist-nav-entry (see SCHEMA_DEVIATIONS.md)
  *
- * Once every checkable Getting Started step is done, remove the nav entry
- * (and leave the page if the user is still on it).
+ * Getting Started stays out of the nav until we know the checklist is still
+ * useful. If every required step is done, keep it hidden (and leave the page
+ * if the user is still on it). If anything remains, splice the nav entry in.
+ * That avoids the flash of "appear then disappear" on completed installs.
  */
 export function OnboardingNavGate() {
   const navigate = useNavigate();
@@ -29,6 +31,7 @@ export function OnboardingNavGate() {
   const hasObjectPermission = useAccountStore((s) => s.hasObjectPermission);
   const permissions = useAccountStore((s) => s.permissions);
   const edition = useAccountStore((s) => s.edition);
+  const showOnboardingNav = useSchemaStore((s) => s.showOnboardingNav);
   const hideOnboardingNav = useSchemaStore((s) => s.hideOnboardingNav);
   const isSchemaLoaded = useSchemaStore((s) => s.isLoaded);
   const setActiveSection = useUIStore((s) => s.setActiveSection);
@@ -42,7 +45,12 @@ export function OnboardingNavGate() {
     let cancelled = false;
 
     void isOnboardingComplete((prefix) => hasObjectPermission(prefix, 'Query')).then((complete) => {
-      if (cancelled || !complete) return;
+      if (cancelled) return;
+
+      if (!complete) {
+        showOnboardingNav();
+        return;
+      }
 
       hideOnboardingNav();
 
@@ -76,6 +84,7 @@ export function OnboardingNavGate() {
   }, [
     isSchemaLoaded,
     hasObjectPermission,
+    showOnboardingNav,
     hideOnboardingNav,
     onOnboardingPage,
     permissions,

@@ -39,13 +39,17 @@ describe('schemaStore search index fork pages', () => {
     });
   });
 
-  it('indexes Overview/Onboarding with keywords and Appearance/Changelog', () => {
+  it('indexes Overview with keywords and Appearance/Changelog; Onboarding only after show', () => {
     useSchemaStore.getState().setSchema(minimalSchema());
-    const index = useSchemaStore.getState().searchIndex;
+    let index = useSchemaStore.getState().searchIndex;
 
     const overview = index.find((e) => e.viewName === OVERVIEW_VIEW_NAME);
     expect(overview?.keywords).toEqual(expect.arrayContaining(['queue', 'dkim']));
+    // Hidden by default until OnboardingNavGate confirms the checklist is useful.
+    expect(index.some((e) => e.viewName === ONBOARDING_VIEW_NAME)).toBe(false);
 
+    useSchemaStore.getState().showOnboardingNav();
+    index = useSchemaStore.getState().searchIndex;
     const onboarding = index.find((e) => e.viewName === ONBOARDING_VIEW_NAME);
     expect(onboarding?.keywords).toEqual(expect.arrayContaining(['spf', 'dmarc']));
 
@@ -53,3 +57,4 @@ describe('schemaStore search index fork pages', () => {
     expect(index.some((e) => e.viewName === 'Changelog')).toBe(true);
   });
 });
+

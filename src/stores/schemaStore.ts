@@ -14,9 +14,11 @@ import { OVERVIEW_VIEW_NAME } from '@/features/overview/constants';
 //
 // The sidebar is entirely server-driven (schema.layouts) — there's no
 // mechanism for the schema to describe a client-only page like this one, so
-// the link is spliced into the first layout's items right after Dashboard,
-// once, here (the single place the raw schema enters app state) rather than
-// in every consumer (Sidebar, search index, etc).
+// the link is spliced into the first layout's items right after Dashboard
+// (the single place layout mutations enter app state) rather than in every
+// consumer. Getting Started is *not* inserted in setSchema: it stays hidden
+// until OnboardingNavGate confirms the checklist is still useful, so
+// completed installs never flash the item then remove it.
 function withOnboardingNavEntry(schema: Schema): Schema {
   const first = schema.layouts[0];
   if (!first) return schema;
@@ -32,7 +34,12 @@ function withOnboardingNavEntry(schema: Schema): Schema {
   const dashboardIdx = first.items.findIndex(
     (item) => 'link' in item && item.link.viewName === 'CustomComponent/Dashboard',
   );
-  const insertAt = dashboardIdx === -1 ? 0 : dashboardIdx + 1;
+  // Prefer sitting above Overview when that fork entry is already present.
+  const overviewIdx = first.items.findIndex(
+    (item) => 'link' in item && item.link.viewName === OVERVIEW_VIEW_NAME,
+  );
+  const insertAt =
+    overviewIdx !== -1 ? overviewIdx : dashboardIdx === -1 ? 0 : dashboardIdx + 1;
   const items = [...first.items.slice(0, insertAt), onboardingLink, ...first.items.slice(insertAt)];
 
   return {
@@ -107,6 +114,8 @@ interface SchemaState {
   searchIndex: SearchIndexEntry[];
 
   setSchema: (schema: Schema) => void;
+  /** SCHEMA-DEVIATION: onboarding-checklist-nav-entry — show Getting Started only while useful. */
+  showOnboardingNav: () => void;
   /** SCHEMA-DEVIATION: onboarding-checklist-nav-entry — drop Getting Started once complete. */
   hideOnboardingNav: () => void;
 }
@@ -284,7 +293,9 @@ export const useSchemaStore = create<SchemaState>()((set) => ({
   searchIndex: [],
 
   setSchema: (rawSchema) => {
-    const schema = withOverviewNavEntry(withOnboardingNavEntry(rawSchema));
+    // Overview only — Getting Started is added later via showOnboardingNav when
+    // the checklist still has required steps pending (avoids nav flash).
+    const schema = withOverviewNavEntry(rawSchema);
     const { viewToSection, linkEntries } = walkLayouts(schema);
     const searchIndex = buildSearchIndex(schema, viewToSection, linkEntries);
     set({
@@ -292,6 +303,17 @@ export const useSchemaStore = create<SchemaState>()((set) => ({
       isLoaded: true,
       viewToSection,
       searchIndex,
+    });
+  },
+
+  showOnboardingNav: () => {
+    set((state) => {
+      if (!state.schema) return state;
+      const schema = withOnboardingNavEntry(state.schema);
+      if (schema === state.schema) return state;
+      const { viewToSection, linkEntries } = walkLayouts(schema);
+      const searchIndex = buildSearchIndex(schema, viewToSection, linkEntries);
+      return { schema, viewToSection, searchIndex };
     });
   },
 
