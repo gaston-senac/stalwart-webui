@@ -1,15 +1,33 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, type Plugin } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import { version } from './package.json'
+
+/** Restart the dev server when the disposable token / proxy env file changes. */
+function restartOnEnvDevelopmentLocal(): Plugin {
+  const envFile = path.resolve(__dirname, '.env.development.local')
+  return {
+    name: 'restart-on-env-development-local',
+    configureServer(server) {
+      server.watcher.add(envFile)
+      const maybeRestart = (changed: string) => {
+        if (path.resolve(changed) === envFile) {
+          void server.restart()
+        }
+      }
+      server.watcher.on('change', maybeRestart)
+      server.watcher.on('add', maybeRestart)
+    },
+  }
+}
 
 export default defineConfig({
   base: './',
   define: {
     __APP_VERSION__: JSON.stringify(version),
   },
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), restartOnEnvDevelopmentLocal()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
