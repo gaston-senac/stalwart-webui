@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased]
 
+### Added
+- Overview page (sidebar, under Getting Started): Community-friendly inventory of directory objects, mail readiness, access & apps, and report counts via JMAP totals — distinct from the Enterprise live-metrics Dashboard (`community-overview-nav-entry` in SCHEMA_DEVIATIONS.md).
+
 ## [1.1.4] - 2026-08-04
 
 ### Added

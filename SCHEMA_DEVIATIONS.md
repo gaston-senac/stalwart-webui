@@ -53,6 +53,13 @@ itself stays byte-for-byte alignable with upstream's version of the file.
 - **Why**: this is a fork-only convenience page (a first-run checklist), not something `stalwartlabs/stalwart`'s schema is expected to ever model — unlike the other entries here, there's no server-side "ideal fix" that would make this unnecessary.
 - **Ideal fix**: none expected; kept as a deviation only so it stays clearly flagged as fork-only UI rather than looking like it came from the schema. Remove `withOnboardingNavEntry` and the `Onboarding` case in `MainContent.tsx` to drop it.
 
+### `community-overview-nav-entry` 🟡
+
+- **Where**: [`src/stores/schemaStore.ts`](src/stores/schemaStore.ts) — `withOverviewNavEntry` (applied after onboarding splice in `setSchema`); [`src/features/overview/`](src/features/overview/); routed in [`src/components/layout/MainContent.tsx`](src/components/layout/MainContent.tsx)
+- **What**: splices an "Overview" link (`CustomComponent/Overview`) into the first layout's items, immediately under Getting Started (or under Dashboard when Getting Started is absent/hidden). The page shows permission-gated inventory totals via cheap JMAP `*/query` calls with `calculateTotal: true` (directory, mail readiness, access & apps, reports) — real object counts only, not Enterprise live metrics.
+- **Why**: the Enterprise Dashboard needs `liveMetrics` / `x:Metric` and is locked or hidden on Community/OSS; Community admins still need a high-level inventory view. The server's schema has no way to describe this fork-only page.
+- **Ideal fix**: none expected; remove `withOverviewNavEntry` and the `Overview` case in `MainContent.tsx` to drop it.
+
 ### `account-quota-usage-column` 🟡
 
 - **Where**: [`src/lib/accountColumns.ts`](src/lib/accountColumns.ts)

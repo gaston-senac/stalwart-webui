@@ -8,6 +8,7 @@ import { create } from 'zustand';
 import type { Schema, LayoutSubItem, LayoutItem } from '@/types/schema';
 
 import { ONBOARDING_VIEW_NAME } from '@/features/onboarding/checklist';
+import { OVERVIEW_VIEW_NAME } from '@/features/overview/constants';
 
 // SCHEMA-DEVIATION: onboarding-checklist-nav-entry (see SCHEMA_DEVIATIONS.md)
 //
@@ -33,6 +34,39 @@ function withOnboardingNavEntry(schema: Schema): Schema {
   );
   const insertAt = dashboardIdx === -1 ? 0 : dashboardIdx + 1;
   const items = [...first.items.slice(0, insertAt), onboardingLink, ...first.items.slice(insertAt)];
+
+  return {
+    ...schema,
+    layouts: [{ ...first, items }, ...schema.layouts.slice(1)],
+  };
+}
+
+// SCHEMA-DEVIATION: community-overview-nav-entry (see SCHEMA_DEVIATIONS.md)
+//
+// Inventory page for Community (and all editions). Inserted under Getting
+// Started when present, otherwise under Dashboard. Survives hideOnboardingNav.
+function withOverviewNavEntry(schema: Schema): Schema {
+  const first = schema.layouts[0];
+  if (!first) return schema;
+
+  const alreadyPresent = first.items.some(
+    (item) => 'link' in item && item.link.viewName === OVERVIEW_VIEW_NAME,
+  );
+  if (alreadyPresent) return schema;
+
+  const overviewLink: LayoutItem = {
+    link: { name: 'Overview', icon: 'panels-top-left', viewName: OVERVIEW_VIEW_NAME },
+  };
+
+  const onboardingIdx = first.items.findIndex(
+    (item) => 'link' in item && item.link.viewName === ONBOARDING_VIEW_NAME,
+  );
+  const dashboardIdx = first.items.findIndex(
+    (item) => 'link' in item && item.link.viewName === 'CustomComponent/Dashboard',
+  );
+  const insertAt =
+    onboardingIdx !== -1 ? onboardingIdx + 1 : dashboardIdx !== -1 ? dashboardIdx + 1 : 0;
+  const items = [...first.items.slice(0, insertAt), overviewLink, ...first.items.slice(insertAt)];
 
   return {
     ...schema,
@@ -214,7 +248,7 @@ export const useSchemaStore = create<SchemaState>()((set) => ({
   searchIndex: [],
 
   setSchema: (rawSchema) => {
-    const schema = withOnboardingNavEntry(rawSchema);
+    const schema = withOverviewNavEntry(withOnboardingNavEntry(rawSchema));
     const { viewToSection, linkEntries } = walkLayouts(schema);
     const searchIndex = buildSearchIndex(schema, viewToSection, linkEntries);
     set({
@@ -228,6 +262,7 @@ export const useSchemaStore = create<SchemaState>()((set) => ({
   hideOnboardingNav: () => {
     set((state) => {
       if (!state.schema) return state;
+      // Overview stays; only Getting Started is removed.
       const schema = withoutOnboardingNavEntry(state.schema);
       if (schema === state.schema) return state;
       const { viewToSection, linkEntries } = walkLayouts(schema);

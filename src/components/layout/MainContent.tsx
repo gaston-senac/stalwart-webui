@@ -32,6 +32,9 @@ const ActionPage = lazy(() => import('@/features/actions/ActionPage').then((m) =
 const OnboardingChecklistPage = lazy(() =>
   import('@/features/onboarding/OnboardingChecklistPage').then((m) => ({ default: m.OnboardingChecklistPage })),
 );
+const OverviewPage = lazy(() =>
+  import('@/features/overview/OverviewPage').then((m) => ({ default: m.OverviewPage })),
+);
 
 interface MainContentProps {
   viewName?: string;
@@ -80,6 +83,9 @@ function MainContentView({ viewName, id, section }: MainContentProps) {
     }
     if (componentName === 'Onboarding') {
       return <OnboardingChecklistPage />;
+    }
+    if (componentName === 'Overview') {
+      return <OverviewPage />;
     }
     return (
       <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
