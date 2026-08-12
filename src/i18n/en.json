@@ -331,6 +331,7 @@
     "filterPresetSave": "Save preset",
     "filterPresetDelete": "Delete preset",
     "filterPresetNamePrompt": "Name for this filter preset",
+    "problemsOnly": "Problems only",
     "resetFilters": "Reset",
     "searchFilters": "Search",
     "selectAll": "Select all",

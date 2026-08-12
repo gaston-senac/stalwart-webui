@@ -116,6 +116,13 @@ itself stays byte-for-byte alignable with upstream's version of the file.
 - **Why**: the Roles list schema only exposes Description as a column; seeing how broad or restrictive a role is requires opening it and counting permissions by hand.
 - **Ideal fix**: the server's `x:Role` list schema includes computed enabled/disabled permission count columns natively; this column definition is deleted.
 
+### `report-problems-only-filter` 🟡
+
+- **Where**: [`src/components/lists/DynamicList.tsx`](src/components/lists/DynamicList.tsx) — `problemsOnly` toggle; predicate in [`src/lib/reportSummaries.ts`](src/lib/reportSummaries.ts) (`reportHasProblems`)
+- **What**: on DMARC/TLS/ARF lists (those that already carry report-summary columns), a "Problems only" switch fetches the full result set (same client-filter path as logs) and keeps rows with quarantine/reject, failed TLS sessions, or ARF incidents > 0. Synced via `?problemsOnly=1`.
+- **Why**: nested `report` fields are not queryable as JMAP filters, so "show me reports that need attention" cannot be expressed server-side today.
+- **Ideal fix**: the server accepts filters on nested disposition/session/incident counts; the client toggle is deleted.
+
 ### `report-summary-columns` 🟡
 
 - **Where**: [`src/lib/reportColumns.ts`](src/lib/reportColumns.ts), [`src/lib/reportSummaries.ts`](src/lib/reportSummaries.ts), resolved in [`src/components/lists/DynamicList.tsx`](src/components/lists/DynamicList.tsx)

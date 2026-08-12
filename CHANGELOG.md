@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file. This projec
 - Generic prompted mass-action dialog (`PromptSetPropertyDialog`); bulk quota change is now a thin consumer of it.
 - Log Entries: named filter presets (localStorage) and optional auto-refresh every 10s (respects refresh cooldown).
 - Object-list combobox cache: invalidate only related types after create/update/destroy instead of wiping every list on each view change.
+- DMARC/TLS/ARF lists: "Problems only" toggle to show reports with quarantine/reject, failed sessions, or incidents (`report-problems-only-filter`).
 
 ## [1.1.4] - 2026-08-04
 

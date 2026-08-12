@@ -86,6 +86,7 @@ import {
   getReportSummaryValue,
   isReportSummaryColumn,
   listNeedsReportProperty,
+  reportHasProblems,
   REPORT_SUMMARY_COLUMNS,
 } from '@/lib/reportSummaries';
 import { ReportSummaryCell } from '@/components/lists/ReportSummaryCell';
@@ -633,6 +634,10 @@ export function DynamicList({ viewName }: DynamicListProps) {
   );
   // SCHEMA-DEVIATION: report-summary-columns (see SCHEMA_DEVIATIONS.md)
   const needsReportProperty = listNeedsReportProperty(resolved?.list?.columns ?? []);
+  // SCHEMA-DEVIATION: report-problems-only-filter (see SCHEMA_DEVIATIONS.md)
+  const [problemsOnly, setProblemsOnly] = useState(
+    () => new URLSearchParams(window.location.search).get('problemsOnly') === '1',
+  );
 
   const displayColumns = useMemo(() => {
     const columns = resolved?.list?.columns ?? [];
@@ -875,7 +880,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
         const filter = buildFilter();
         const sortArr = buildSort();
 
-        if (activeClientFilters.length > 0 || isMailboxList || clientSortField) {
+        if (activeClientFilters.length > 0 || isMailboxList || clientSortField || (problemsOnly && needsReportProperty)) {
           // No server-side pagination possible once a client-only filter is
           // active (SCHEMA-DEVIATION: log-client-filters): fetch every
           // server-matching row up front, narrow it in the browser, then
@@ -886,7 +891,9 @@ export function DynamicList({ viewName }: DynamicListProps) {
           // under its parent correctly. Sorting by Email/Full Name/Usage/
           // Aliases on Accounts/Groups needs it too (SCHEMA-DEVIATION:
           // account-client-sort) since the server doesn't support sorting
-          // on any property of either list.
+          // on any property of either list. Report "problems only" also
+          // needs the nested `report` blob (SCHEMA-DEVIATION:
+          // report-problems-only-filter).
           const { list: fullList } = await jmapQueryAllAndGet(
             obj.objectName,
             accountId,
@@ -896,6 +903,9 @@ export function DynamicList({ viewName }: DynamicListProps) {
           let matched = fullList.filter((item) =>
             activeClientFilters.every((f) => String(item[f.field] ?? '') === f.value),
           );
+          if (problemsOnly && needsReportProperty) {
+            matched = matched.filter((item) => reportHasProblems(viewName, item));
+          }
           if (isMailboxList) {
             const { items: ordered, depths } = sortMailboxesByHierarchy(matched);
             matched = ordered;
@@ -976,6 +986,9 @@ export function DynamicList({ viewName }: DynamicListProps) {
       clientSortField,
       sort,
       activeClientFilters,
+      problemsOnly,
+      needsReportProperty,
+      viewName,
     ],
   );
 
@@ -1081,7 +1094,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
     setCurrentAnchor(null);
     fetchData(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewName, sort, resolved?.list, appliedFilters, activeAccountId]);
+  }, [viewName, sort, resolved?.list, appliedFilters, activeAccountId, problemsOnly]);
 
   useEffect(() => {
     if (!schema || !resolved?.list || items.length === 0) return;
@@ -1176,9 +1189,12 @@ export function DynamicList({ viewName }: DynamicListProps) {
       params.set('sort', sort.field);
       params.set('sortDir', sort.ascending ? 'asc' : 'desc');
     }
+    if (problemsOnly && needsReportProperty) {
+      params.set('problemsOnly', '1');
+    }
     setSearchParams(params, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterValues, sort]);
+  }, [filterValues, sort, appliedFilters, problemsOnly, needsReportProperty]);
 
   const handleNextPage = useCallback(() => {
     if (clientAllItems !== null) {
@@ -1856,6 +1872,19 @@ export function DynamicList({ viewName }: DynamicListProps) {
           )}
         </div>
       </div>
+
+      {needsReportProperty && (
+        <div className="flex items-center gap-2">
+          <Switch
+            id="report-problems-only"
+            checked={problemsOnly}
+            onCheckedChange={setProblemsOnly}
+          />
+          <Label htmlFor="report-problems-only" className="text-sm font-normal">
+            {t('list.problemsOnly', 'Problems only')}
+          </Label>
+        </div>
+      )}
 
       {list.filters && list.filters.length > 0 && (
         <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
