@@ -6,7 +6,7 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Moon, Palette, Sun } from 'lucide-react';
+import { AlignJustify, Check, List, Moon, Palette, Sun } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,8 @@ export function AppearancePage() {
   const setColorTheme = useUIStore((s) => s.setColorTheme);
   const radius = useUIStore((s) => s.radius);
   const setRadius = useUIStore((s) => s.setRadius);
+  const listDensity = useUIStore((s) => s.listDensity);
+  const setListDensity = useUIStore((s) => s.setListDensity);
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
@@ -99,6 +101,31 @@ export function AppearancePage() {
             className="rounded-none"
           >
             <span className="h-6 w-10 rounded-none border-2 border-current" />
+          </OptionCard>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t('appearance.listDensity', 'List density')}</CardTitle>
+          <CardDescription>
+            {t('appearance.listDensityDescription', 'Choose how tightly rows are packed in admin lists.')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-3">
+          <OptionCard
+            selected={listDensity === 'comfortable'}
+            onClick={() => setListDensity('comfortable')}
+            label={t('appearance.comfortable', 'Comfortable')}
+          >
+            <AlignJustify className="h-5 w-5" />
+          </OptionCard>
+          <OptionCard
+            selected={listDensity === 'compact'}
+            onClick={() => setListDensity('compact')}
+            label={t('appearance.compact', 'Compact')}
+          >
+            <List className="h-5 w-5" />
           </OptionCard>
         </CardContent>
       </Card>

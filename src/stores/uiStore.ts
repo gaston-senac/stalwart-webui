@@ -10,17 +10,20 @@ import { persist } from 'zustand/middleware';
 export type Theme = 'light' | 'dark';
 export type ColorTheme = 'default' | 'stalwart' | 'ocean' | 'forest' | 'violet' | 'rose' | 'amber' | 'teal';
 export type Radius = 'rounded' | 'square';
+export type ListDensity = 'comfortable' | 'compact';
 
 interface UIState {
   theme: Theme;
   colorTheme: ColorTheme;
   radius: Radius;
+  listDensity: ListDensity;
   sidebarOpen: boolean;
   activeSection: string;
 
   setTheme: (theme: Theme) => void;
   setColorTheme: (colorTheme: ColorTheme) => void;
   setRadius: (radius: Radius) => void;
+  setListDensity: (listDensity: ListDensity) => void;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
   setActiveSection: (section: string) => void;
@@ -45,6 +48,10 @@ function applyColorThemeAttribute(colorTheme: ColorTheme) {
 
 function applyRadiusAttribute(radius: Radius) {
   document.documentElement.dataset.radius = radius;
+}
+
+function applyListDensityAttribute(listDensity: ListDensity) {
+  document.documentElement.dataset.listDensity = listDensity;
 }
 
 export const COLOR_THEMES: { value: ColorTheme; labelKey: string; fallback: string; swatch: string }[] = [
@@ -75,6 +82,7 @@ export const useUIStore = create<UIState>()(
         typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
       colorTheme: 'stalwart',
       radius: 'square',
+      listDensity: 'comfortable',
       sidebarOpen: typeof window !== 'undefined' ? (window.matchMedia?.('(min-width: 768px)').matches ?? true) : true,
       activeSection: '',
 
@@ -91,6 +99,11 @@ export const useUIStore = create<UIState>()(
       setRadius: (radius) => {
         applyRadiusAttribute(radius);
         set({ radius });
+      },
+
+      setListDensity: (listDensity) => {
+        applyListDensityAttribute(listDensity);
+        set({ listDensity });
       },
 
       toggleSidebar: () => {
@@ -111,6 +124,7 @@ export const useUIStore = create<UIState>()(
         theme: state.theme,
         colorTheme: state.colorTheme,
         radius: state.radius,
+        listDensity: state.listDensity,
       }),
       onRehydrateStorage: () => {
         return (state) => {
@@ -118,6 +132,7 @@ export const useUIStore = create<UIState>()(
             applyThemeClass(state.theme);
             applyColorThemeAttribute(state.colorTheme ?? 'stalwart');
             applyRadiusAttribute(state.radius ?? 'square');
+            applyListDensityAttribute(state.listDensity ?? 'comfortable');
           }
         };
       },

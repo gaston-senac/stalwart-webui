@@ -41,6 +41,8 @@ import { getBasePath } from './lib/basePath';
     if ((state?.radius ?? 'square') === 'square') {
       document.documentElement.dataset.radius = 'square';
     }
+    const listDensity = state?.listDensity === 'compact' ? 'compact' : 'comfortable';
+    document.documentElement.dataset.listDensity = listDensity;
     // eslint-disable-next-line no-empty
   } catch {}
 })();

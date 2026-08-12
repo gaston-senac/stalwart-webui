@@ -66,6 +66,8 @@ import { useSchemaStore } from '@/stores/schemaStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useAccountStore } from '@/stores/accountStore';
 import { useCacheStore } from '@/stores/cacheStore';
+import { useUIStore } from '@/stores/uiStore';
+import { cn } from '@/lib/utils';
 import { resolveObject, resolveSchema, resolveList, getDisplayProperty } from '@/lib/schemaResolver';
 import {
   jmapGetBatched,
@@ -599,6 +601,9 @@ export function DynamicList({ viewName }: DynamicListProps) {
   const hasObjectPermission = useAccountStore((s) => s.hasObjectPermission);
   const hasPermission = useAccountStore((s) => s.hasPermission);
   const edition = useAccountStore((s) => s.edition);
+  const listDensity = useUIStore((s) => s.listDensity);
+  const headCellPad = listDensity === 'compact' ? 'px-3 py-2' : 'px-3 py-3';
+  const bodyCellPad = listDensity === 'compact' ? 'px-3 py-1' : 'px-3 py-2';
   // Reactive, unlike the getAccountId() snapshot read inside fetchData: needed
   // so switching accounts from the profile dropdown (a pure store update with
   // no navigation) re-triggers the fetch effect below for account-scoped
@@ -2237,7 +2242,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
             <thead>
               <tr className="border-b bg-muted">
                 {hasMassActions && (
-                  <th scope="col" className="w-10 px-3 py-3 whitespace-nowrap">
+                  <th scope="col" className={cn('w-10 whitespace-nowrap', headCellPad)}>
                     <Checkbox
                       checked={items.length > 0 && selectedIds.size === items.length}
                       onCheckedChange={toggleSelectAll}
@@ -2260,11 +2265,11 @@ export function DynamicList({ viewName }: DynamicListProps) {
                       key={col.name}
                       scope="col"
                       aria-sort={ariaSort}
-                      className={
-                        col.name === 'subject'
-                          ? 'max-w-[20rem] px-3 py-3 text-left font-medium text-muted-foreground'
-                          : 'px-3 py-3 text-left font-medium text-muted-foreground whitespace-nowrap'
-                      }
+                      className={cn(
+                        'text-left font-medium text-muted-foreground',
+                        headCellPad,
+                        col.name === 'subject' ? 'max-w-[20rem]' : 'whitespace-nowrap',
+                      )}
                     >
                       <div className="flex items-center">
                         {col.label}
@@ -2274,7 +2279,10 @@ export function DynamicList({ viewName }: DynamicListProps) {
                   );
                 })}
                 {hasItemActions && (
-                  <th scope="col" className="w-12 px-3 py-3 text-right font-medium text-muted-foreground whitespace-nowrap">
+                  <th
+                    scope="col"
+                    className={cn('w-12 text-right font-medium text-muted-foreground whitespace-nowrap', headCellPad)}
+                  >
                     {t('list.actions', 'Actions')}
                   </th>
                 )}
@@ -2403,7 +2411,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
                       }}
                     >
                       {hasMassActions && (
-                        <td className="px-3 py-2 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <td className={cn('whitespace-nowrap', bodyCellPad)} onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={selectedIds.has(itemId)}
                             onCheckedChange={() => toggleSelectItem(itemId)}
@@ -2468,11 +2476,10 @@ export function DynamicList({ viewName }: DynamicListProps) {
                         return (
                           <td
                             key={col.name}
-                            className={
-                              col.name === 'subject'
-                                ? 'max-w-[20rem] px-3 py-2'
-                                : 'px-3 py-2 whitespace-nowrap'
-                            }
+                            className={cn(
+                              bodyCellPad,
+                              col.name === 'subject' ? 'max-w-[20rem]' : 'whitespace-nowrap',
+                            )}
                           >
                             {colIdx === 0 && detailPath ? (
                               <Link
@@ -2507,7 +2514,9 @@ export function DynamicList({ viewName }: DynamicListProps) {
                         );
                       })}
                       {hasItemActions && (
-                        <td className="px-3 py-2 text-right whitespace-nowrap">{renderItemActions(item)}</td>
+                        <td className={cn('text-right whitespace-nowrap', bodyCellPad)}>
+                          {renderItemActions(item)}
+                        </td>
                       )}
                     </tr>
                   );
