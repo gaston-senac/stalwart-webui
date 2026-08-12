@@ -4,26 +4,30 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-12
+
 ### Added
 - Overview page (sidebar, under Getting Started): Community-friendly inventory of directory objects, mail readiness, access & apps, and report counts via JMAP totals — distinct from the Enterprise live-metrics Dashboard (`community-overview-nav-entry` in SCHEMA_DEVIATIONS.md).
 - Overview attention badges: queue backlog, certificates expired/expiring soon (30 days), and sampled DMARC/TLS/ARF rows with quarantine/reject/failed/incidents.
 - Getting Started v2: optional DMARC-reports check, SPF/DMARC docs, and schema-resolved deep links to spam settings / listeners.
 - Generic prompted mass-action dialog (`PromptSetPropertyDialog`); bulk quota change is now a thin consumer of it.
 - Log Entries: named filter presets (localStorage) and optional auto-refresh every 10s (respects refresh cooldown).
-- Object-list combobox cache: invalidate only related types after create/update/destroy instead of wiping every list on each view change.
 - DMARC/TLS/ARF lists: "Problems only" toggle to show reports with quarantine/reject, failed sessions, or incidents (`report-problems-only-filter`).
 - Community/OSS home: land on Overview when the Enterprise Dashboard is locked or hidden; Enterprise upsell offers “Open Overview”.
 - List text filters show “Exact match only”; empty state distinguishes “no filter matches” (with Reset) from a truly empty list (Create).
 - Fetch-all list paths (client filters/sort, mailbox tree, problems-only, CSV export): warn above 2 000 matching rows and refuse above 10 000.
 - Dev server restarts automatically when `.env.development.local` changes (e.g. after regenerating a token).
 - Command palette: CustomComponent pages (Overview, Getting Started, …) and Appearance/Changelog are searchable; fork pages get keywords (`queue`, `dkim`, `theme`, …).
-- Move remaining fork UI strings (empty main content, unknown view/component, empty dashboard) into `en.json`.
 - Dev: Vite proxies OAuth `/login?...`, `/auth`, and `/logo` to the local Stalwart server so interactive `/login` works without `VITE_ACCESS_TOKEN`.
 - Queued messages list: empty and backlog guidance with links to Delivery Trace and Log Entries when those views are accessible.
 - List accessibility: column `scope`/`aria-sort`, labeled sort controls, filter label association + focus on open, keyboard-activatable rows, row-actions label, and visible Enterprise field hints.
 - Appearance: list density (Comfortable / Compact) persisted with other UI prefs and applied to admin list tables.
 - Upstream sync playbook (`docs/UPSTREAM_SYNC.md`) for merging `stalwartlabs/webui` while revalidating `SCHEMA_DEVIATIONS.md`.
 - README: Community vs Enterprise matrix; screenshots for Overview, Getting Started, queue backlog, Log Entries, Problems only (TLS), command palette, Changelog, and Appearance list density.
+
+### Changed
+- Object-list combobox cache: invalidate only related types after create/update/destroy instead of wiping every list on each view change.
+- Move remaining fork UI strings (empty main content, unknown view/component, empty dashboard) into `en.json`.
 
 ## [1.1.4] - 2026-08-04
 
