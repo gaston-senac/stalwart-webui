@@ -20,12 +20,15 @@ Community fork of [stalwartlabs/webui](https://github.com/stalwartlabs/webui), a
 
 Full local dev workflow, including how to run it end-to-end without a browser: [DEVELOPMENT.md](DEVELOPMENT.md).
 
+Merging official WebUI changes into this fork: [docs/UPSTREAM_SYNC.md](docs/UPSTREAM_SYNC.md) (checklist against [SCHEMA_DEVIATIONS.md](SCHEMA_DEVIATIONS.md)).
+
 ## Rules
 
 The detailed rules live in `.agents/rules/`. Read the relevant file before acting:
 
 - **Schema fidelity** - [.agents/rules/schema-fidelity.md](.agents/rules/schema-fidelity.md) - Stay schema-driven; how to handle cases the schema can't cover yet
 - **Releases** - [.agents/rules/releases.md](.agents/rules/releases.md) - Cut versions so GitHub Release notes are the tagged CHANGELOG section, never `[Unreleased]`
+- **Upstream sync** - [docs/UPSTREAM_SYNC.md](docs/UPSTREAM_SYNC.md) - Merge `stalwartlabs/webui` without losing deviations or fork pages
 
 ## Universal Rules
 
