@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file. This projec
 - List accessibility: column `scope`/`aria-sort`, labeled sort controls, filter label association + focus on open, keyboard-activatable rows, row-actions label, and visible Enterprise field hints.
 - Appearance: list density (Comfortable / Compact) persisted with other UI prefs and applied to admin list tables.
 - Upstream sync playbook (`docs/UPSTREAM_SYNC.md`) for merging `stalwartlabs/webui` while revalidating `SCHEMA_DEVIATIONS.md`.
+- README: Community vs Enterprise matrix; screenshots for Overview, Getting Started, queue backlog, Log Entries, Problems only (TLS), command palette, Changelog, and Appearance list density.
 
 ## [1.1.4] - 2026-08-04
 

@@ -58,19 +58,35 @@ Key features (shared with upstream):
 
 Additions in this fork:
 
+- **Community Overview**: inventory cards (directory, mail readiness, access & apps, reports) with attention badges for queue backlog, certificate expiry, and report problems — separate from the Enterprise live-metrics Dashboard.
+- **Getting Started checklist**: first-run checklist (domain, DKIM, TLS cert, admin account; optional DMARC) with deep links and docs.
 - **Usable on mobile**: admin lists, forms, and the sidebar work on narrow viewports instead of assuming desktop.
-- **Selectable color themes** (Stalwart, Ocean, Forest, Violet, Rose, Amber, Teal) with a light/dark toggle and a square/rounded corners option.
-- **`Ctrl+K` / `Cmd+K` command palette** to search pages, form sections, and fields across the admin panel.
+- **Selectable color themes** (Stalwart, Ocean, Forest, Violet, Rose, Amber, Teal) with light/dark, square/rounded corners, and **list density** (comfortable / compact).
+- **`Ctrl+K` / `Cmd+K` command palette** to search pages, form sections, and fields — including Overview / Appearance keywords (`queue`, `theme`, …).
+- **In-app Changelog** in the header menu (published versions only; no `[Unreleased]`).
 - **Calendar date/time picker** replacing native date inputs, themed for dark mode.
 - **Accounts list**: Role and Usage/Quota columns, with a highlight and recalculate hint for stale negative disk-usage values.
 - **Aliases counts**: Accounts, Groups, Domains, and Mailing Lists lists all show an Aliases column.
 - **Sortable list columns**: the most relevant column on every list (Accounts, Groups, Domains, Mailing Lists, Roles) can be sorted client-side.
 - **Roles list**: Enabled/Disabled Permissions count columns, so you can see a role's scope without opening it.
-- **User menu**: current account name/email and an account switcher in the header dropdown, alongside a dedicated Appearance settings page (light/dark, 8 color themes including a brand-accurate "Stalwart" theme, rounded/square corners).
+- **User menu**: current account name/email and an account switcher in the header dropdown, alongside Appearance settings.
 - **Mailboxes list**: shown as an indented hierarchy instead of a flat list.
-- **Log Entries**: client-side Level/Event filters and a rate-limited manual refresh button.
-- **Report lists**: Pass/Quarantine/Reject counts on DMARC, Successful/Failed Sessions on TLS, Incidents + Feedback Type on ARF (derived client-side from each report’s nested data); Quarantine/Reject/Failed Sessions use coloured badges when non-zero.
+- **Queued messages**: empty/backlog guidance with links to Delivery Trace and Log Entries.
+- **Log Entries**: client-side Level/Event filters (“Exact match only”), named presets, optional auto-refresh, and a rate-limited Refresh button.
+- **Report lists**: Pass/Quarantine/Reject (DMARC), Successful/Failed Sessions (TLS), Incidents + Feedback Type (ARF); coloured badges when non-zero; **Problems only** toggle.
 - **Open in new tab**: sidebar, header menu, list Create/rows, command palette, and Back/Cancel use real links so middle-click and the browser context menu work.
+
+### Community vs Enterprise (this fork)
+
+| Capability | Community / OSS | Enterprise |
+|------------|-----------------|------------|
+| Overview inventory + attention badges | Yes | Yes |
+| Getting Started checklist | Yes | Yes |
+| Directory / reports / queue / logs (schema + JMAP) | Yes (per permissions) | Yes |
+| Live-metrics Dashboard, Live Tracing | Locked / hidden | Yes (with permissions) |
+| Appearance, Changelog, command palette | Yes | Yes |
+
+Deliberate client workarounds where the official schema cannot express a feature yet are listed in [SCHEMA_DEVIATIONS.md](SCHEMA_DEVIATIONS.md). Merging upstream WebUI: [docs/UPSTREAM_SYNC.md](docs/UPSTREAM_SYNC.md).
 
 ## Screenshots
 
@@ -80,18 +96,24 @@ Captured against a local dev server seeded with sample data (see [DEVELOPMENT.md
 
 | | |
 |---|---|
+| Overview — inventory + attention badges | Getting Started checklist |
+| ![Overview](./docs/screenshots/overview.png) | ![Getting Started](./docs/screenshots/getting-started.png) |
 | Accounts — Usage/Quota + Aliases columns | Roles — permission counts |
 | ![Accounts list](./docs/screenshots/accounts-list.png) | ![Roles list](./docs/screenshots/roles-list.png) |
 | Groups — Usage/Quota + Aliases columns | Domains — Aliases column |
 | ![Groups list](./docs/screenshots/groups-list.png) | ![Domains list](./docs/screenshots/domains-list.png) |
 | Mailing Lists — Aliases column | User menu (header) |
 | ![Mailing lists](./docs/screenshots/mailing-lists.png) | ![User menu](./docs/screenshots/user-menu.png) |
-| Appearance — light mode | Appearance — dark mode, Stalwart theme |
+| Appearance — light mode + list density | Appearance — dark mode, Stalwart theme |
 | ![Appearance light](./docs/screenshots/appearance-light.png) | ![Appearance dark](./docs/screenshots/appearance-dark.png) |
-| DMARC inbox — Pass / Quarantine / Reject + truncated Subject | TLS inbox — Successful / Failed Sessions (red badges) |
-| ![DMARC reports](./docs/screenshots/dmarc-reports.png) | ![TLS reports](./docs/screenshots/tls-reports.png) |
-| ARF inbox — Incidents + Feedback Type | |
-| ![ARF reports](./docs/screenshots/arf-reports.png) | |
+| Queued messages — backlog + ops links | Log Entries — exact-match filters, presets, auto-refresh |
+| ![Queued messages](./docs/screenshots/queue-messages.png) | ![Log Entries](./docs/screenshots/log-entries.png) |
+| DMARC inbox — summary columns | TLS inbox — Problems only + failed sessions |
+| ![DMARC reports](./docs/screenshots/dmarc-reports.png) | ![TLS problems only](./docs/screenshots/tls-problems-only.png) |
+| ARF inbox — Incidents + Feedback Type | Command palette (`theme` → Appearance) |
+| ![ARF reports](./docs/screenshots/arf-reports.png) | ![Command palette](./docs/screenshots/command-palette.png) |
+| Changelog (in-app) | |
+| ![Changelog](./docs/screenshots/changelog.png) | |
 
 ## Get Started
 
