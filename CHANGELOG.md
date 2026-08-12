@@ -4,13 +4,34 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-08-12
+
+### Fixed
+- Getting Started no longer flashes in the Management sidebar on completed installs: the nav entry stays hidden until the checklist is confirmed still useful, then appears only when required steps remain.
+
+### Added
+- README screenshots for CSV export, quota progress bars, bulk quota change, Sieve Active column / script editor, expand-to-fit textareas, and list empty states.
+
+### Changed
+- CHANGELOG `[1.2.0]` completed with features that shipped after `v1.1.4` but were omitted from the original cut notes.
+
 ## [1.2.0] - 2026-08-12
 
 ### Added
-- Overview page (sidebar, under Getting Started): Community-friendly inventory of directory objects, mail readiness, access & apps, and report counts via JMAP totals — distinct from the Enterprise live-metrics Dashboard (`community-overview-nav-entry` in SCHEMA_DEVIATIONS.md).
+- Expand-to-fit control on long textarea form fields so admins can grow the editor to content without leaving the form.
+- Syntax-highlighted, foldable editor for Sieve script fields (form detail views).
+- Active column on System and User Sieve script lists (`isActive`), matching the per-account Sieve list behaviour.
+- Coloured progress bar for Usage/Quota columns on Accounts and Groups (percent used; unlimited still shows ∞).
+- CSV export on admin panel lists (same columns and formatting as the table).
+- Bulk “Change quota…” action on Accounts and Groups lists (`bulk-quota-change-action` in SCHEMA_DEVIATIONS.md).
+- Getting Started checklist page (domain, DKIM, TLS certificate, admin account) under Management (`onboarding-checklist-nav-entry`).
+- Getting Started hides from the sidebar once every required checkable step is done.
+- Richer list empty state: icon plus Create CTA when the list has no rows (and Create is allowed).
+- Header icons on the Appearance and Changelog pages.
+- Overview page (sidebar, under Getting Started when shown): Community-friendly inventory of directory objects, mail readiness, access & apps, and report counts via JMAP totals — distinct from the Enterprise live-metrics Dashboard (`community-overview-nav-entry` in SCHEMA_DEVIATIONS.md).
 - Overview attention badges: queue backlog, certificates expired/expiring soon (30 days), and sampled DMARC/TLS/ARF rows with quarantine/reject/failed/incidents.
 - Getting Started v2: optional DMARC-reports check, SPF/DMARC docs, and schema-resolved deep links to spam settings / listeners.
-- Generic prompted mass-action dialog (`PromptSetPropertyDialog`); bulk quota change is now a thin consumer of it.
+- Generic prompted mass-action dialog (`PromptSetPropertyDialog`); bulk quota change is a thin consumer of it.
 - Log Entries: named filter presets (localStorage) and optional auto-refresh every 10s (respects refresh cooldown).
 - DMARC/TLS/ARF lists: "Problems only" toggle to show reports with quarantine/reject, failed sessions, or incidents (`report-problems-only-filter`).
 - Community/OSS home: land on Overview when the Enterprise Dashboard is locked or hidden; Enterprise upsell offers “Open Overview”.
@@ -26,6 +47,7 @@ All notable changes to this project will be documented in this file. This projec
 - README: Community vs Enterprise matrix; screenshots for Overview, Getting Started, queue backlog, Log Entries, Problems only (TLS), command palette, Changelog, and Appearance list density.
 
 ### Changed
+- Dependency updates (excluding TypeScript 6.x).
 - Object-list combobox cache: invalidate only related types after create/update/destroy instead of wiping every list on each view change.
 - Move remaining fork UI strings (empty main content, unknown view/component, empty dashboard) into `en.json`.
 

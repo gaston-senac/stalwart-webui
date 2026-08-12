@@ -59,13 +59,15 @@ Key features (shared with upstream):
 Additions in this fork:
 
 - **Community Overview**: inventory cards (directory, mail readiness, access & apps, reports) with attention badges for queue backlog, certificate expiry, and report problems — separate from the Enterprise live-metrics Dashboard.
-- **Getting Started checklist**: first-run checklist (domain, DKIM, TLS cert, admin account; optional DMARC) with deep links and docs.
+- **Getting Started checklist**: first-run checklist (domain, DKIM, TLS cert, admin account; optional DMARC) with deep links and docs — shown in the sidebar only while required steps remain (no flash on completed installs).
 - **Usable on mobile**: admin lists, forms, and the sidebar work on narrow viewports instead of assuming desktop.
 - **Selectable color themes** (Stalwart, Ocean, Forest, Violet, Rose, Amber, Teal) with light/dark, square/rounded corners, and **list density** (comfortable / compact).
 - **`Ctrl+K` / `Cmd+K` command palette** to search pages, form sections, and fields — including Overview / Appearance keywords (`queue`, `theme`, …).
 - **In-app Changelog** in the header menu (published versions only; no `[Unreleased]`).
 - **Calendar date/time picker** replacing native date inputs, themed for dark mode.
-- **Accounts list**: Role and Usage/Quota columns, with a highlight and recalculate hint for stale negative disk-usage values.
+- **Accounts list**: Role and Usage/Quota columns with coloured progress bars, plus a highlight and recalculate hint for stale negative disk-usage values.
+- **CSV export** and **bulk Change quota…** on admin lists (Accounts/Groups for quota).
+- **Sieve**: Active column on System/User script lists; syntax-highlighted foldable script editor; expand-to-fit on long textareas.
 - **Aliases counts**: Accounts, Groups, Domains, and Mailing Lists lists all show an Aliases column.
 - **Sortable list columns**: the most relevant column on every list (Accounts, Groups, Domains, Mailing Lists, Roles) can be sorted client-side.
 - **Roles list**: Enabled/Disabled Permissions count columns, so you can see a role's scope without opening it.
@@ -112,8 +114,14 @@ Captured against a local dev server seeded with sample data (see [DEVELOPMENT.md
 | ![DMARC reports](./docs/screenshots/dmarc-reports.png) | ![TLS problems only](./docs/screenshots/tls-problems-only.png) |
 | ARF inbox — Incidents + Feedback Type | Command palette (`theme` → Appearance) |
 | ![ARF reports](./docs/screenshots/arf-reports.png) | ![Command palette](./docs/screenshots/command-palette.png) |
-| Changelog (in-app) | |
-| ![Changelog](./docs/screenshots/changelog.png) | |
+| Changelog (in-app) | Accounts — Export CSV + quota bars |
+| ![Changelog](./docs/screenshots/changelog.png) | ![CSV export](./docs/screenshots/csv-export.png) |
+| Bulk Change quota… | List empty — no filter matches |
+| ![Bulk quota](./docs/screenshots/bulk-quota.png) | ![Filter empty](./docs/screenshots/list-empty-filter.png) |
+| System Sieve scripts — Active column | Sieve script editor (syntax highlight) |
+| ![Sieve list](./docs/screenshots/sieve-scripts-list.png) | ![Sieve editor](./docs/screenshots/sieve-script-editor.png) |
+| Expand to fit content (long textareas) | |
+| ![Expand textarea](./docs/screenshots/textarea-expand.png) | |
 
 ## Get Started
 
