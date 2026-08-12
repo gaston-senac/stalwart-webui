@@ -1570,6 +1570,21 @@ export function DynamicList({ viewName }: DynamicListProps) {
   const canUpdate = resolved ? hasObjectPermission(resolved.obj.permissionPrefix, 'Update') : false;
   const canDelete = resolved ? hasObjectPermission(resolved.obj.permissionPrefix, 'Destroy') : false;
 
+  const filtersActive =
+    problemsOnly ||
+    Object.entries(appliedFilters).some(([key, val]) => !key.endsWith('Op') && val.trim() !== '');
+
+  const queueOpsLinks = useMemo(() => {
+    if (!isQueuedMessages || !schema) return [];
+    return buildQueueOpsLinks(
+      schema,
+      viewToSection,
+      edition,
+      (prefix) => hasObjectPermission(prefix, 'Get'),
+      hasPermission,
+    );
+  }, [isQueuedMessages, schema, viewToSection, edition, hasObjectPermission, hasPermission]);
+
   if (!schema) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -1606,21 +1621,6 @@ export function DynamicList({ viewName }: DynamicListProps) {
   const hasItemActions = (list.itemActions?.length ?? 0) > 0;
   // SCHEMA-DEVIATION: bulk-quota-change-action (see SCHEMA_DEVIATIONS.md)
   const canBulkChangeQuota = hasQuotaUsageColumn && canUpdate;
-
-  const filtersActive =
-    problemsOnly ||
-    Object.entries(appliedFilters).some(([key, val]) => !key.endsWith('Op') && val.trim() !== '');
-
-  const queueOpsLinks = useMemo(() => {
-    if (!isQueuedMessages || !schema) return [];
-    return buildQueueOpsLinks(
-      schema,
-      viewToSection,
-      edition,
-      (prefix) => hasObjectPermission(prefix, 'Get'),
-      hasPermission,
-    );
-  }, [isQueuedMessages, schema, viewToSection, edition, hasObjectPermission, hasPermission]);
 
   const pageStart = clientAllItems !== null ? clientPage * PAGE_SIZE : anchorStack.length * PAGE_SIZE;
   const rangeStart = pageStart + 1;
