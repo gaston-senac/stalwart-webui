@@ -80,6 +80,7 @@ import {
   FETCH_ALL_HARD_CAP,
   probeQueryTotal,
 } from '@/lib/fetchAllGuardrails';
+import { buildQueueOpsLinks } from '@/lib/queueOpsLinks';
 
 import type { Schema, Field, MassAction, ItemAction, Filter as FilterDef } from '@/types/schema';
 import type { JmapSetResponse, JmapSetError } from '@/types/jmap';
@@ -596,6 +597,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
   const schema = useSchemaStore((s) => s.schema);
   const viewToSection = useSchemaStore((s) => s.viewToSection);
   const hasObjectPermission = useAccountStore((s) => s.hasObjectPermission);
+  const hasPermission = useAccountStore((s) => s.hasPermission);
   const edition = useAccountStore((s) => s.edition);
   // Reactive, unlike the getAccountId() snapshot read inside fetchData: needed
   // so switching accounts from the profile dropdown (a pure store update with
@@ -624,6 +626,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
     viewName === 'x:SieveSystemScript' ||
     viewName === 'x:SieveUserScript';
   const isLogEntries = viewName === 'x:Log' || objectName === 'x:Log';
+  const isQueuedMessages = viewName === 'x:QueuedMessage' || objectName === 'x:QueuedMessage';
   const isAccountsList = viewName === 'x:Account/User';
   const isMailboxList = viewName === 'Mailbox';
   // Not tied to a specific viewName: any list whose schema-driven columns
@@ -1588,6 +1591,17 @@ export function DynamicList({ viewName }: DynamicListProps) {
     problemsOnly ||
     Object.entries(appliedFilters).some(([key, val]) => !key.endsWith('Op') && val.trim() !== '');
 
+  const queueOpsLinks = useMemo(() => {
+    if (!isQueuedMessages || !schema) return [];
+    return buildQueueOpsLinks(
+      schema,
+      viewToSection,
+      edition,
+      (prefix) => hasObjectPermission(prefix, 'Get'),
+      hasPermission,
+    );
+  }, [isQueuedMessages, schema, viewToSection, edition, hasObjectPermission, hasPermission]);
+
   const pageStart = clientAllItems !== null ? clientPage * PAGE_SIZE : anchorStack.length * PAGE_SIZE;
   const rangeStart = pageStart + 1;
   const rangeEnd = pageStart + items.length;
@@ -2147,6 +2161,29 @@ export function DynamicList({ viewName }: DynamicListProps) {
         </Card>
       )}
 
+      {isQueuedMessages && !filtersActive && total !== null && total > 0 && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
+          <p className="font-medium">
+            {t('list.queueBacklogTitle', '{{count}} messages waiting in the queue', { count: total })}
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            {t(
+              'list.queueBacklogBody',
+              'Use Delivery Trace or Log Entries to investigate stuck or delayed mail.',
+            )}
+          </p>
+          {queueOpsLinks.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-3">
+              {queueOpsLinks.map((link) => (
+                <Link key={link.viewName} to={link.href} className="text-primary underline hover:text-primary/80">
+                  {t(link.labelKey[0], link.labelKey[1])}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="min-w-0 rounded-lg border bg-background shadow-sm">
         {/* The scroll container must clip with the parent's inner radius
             (outer radius minus the 1px border), otherwise filled header rows
@@ -2221,6 +2258,27 @@ export function DynamicList({ viewName }: DynamicListProps) {
                             <RotateCcw className="mr-2 h-4 w-4" />
                             {t('list.resetFilters', 'Reset')}
                           </Button>
+                        </>
+                      ) : isQueuedMessages ? (
+                        <>
+                          <p className="text-muted-foreground">
+                            {t('list.queueEmptyTitle', 'The delivery queue is empty')}
+                          </p>
+                          <p className="max-w-sm text-xs text-muted-foreground">
+                            {t(
+                              'list.queueEmptyBody',
+                              'No messages are waiting. If mail is delayed, check Delivery Trace or Log Entries.',
+                            )}
+                          </p>
+                          {queueOpsLinks.length > 0 && (
+                            <div className="mt-1 flex flex-wrap justify-center gap-3">
+                              {queueOpsLinks.map((link) => (
+                                <Button key={link.viewName} asChild size="sm" variant="outline">
+                                  <Link to={link.href}>{t(link.labelKey[0], link.labelKey[1])}</Link>
+                                </Button>
+                              ))}
+                            </div>
+                          )}
                         </>
                       ) : (
                         <>

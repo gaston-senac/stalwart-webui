@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file. This projec
 - Command palette: CustomComponent pages (Overview, Getting Started, …) and Appearance/Changelog are searchable; fork pages get keywords (`queue`, `dkim`, `theme`, …).
 - Move remaining fork UI strings (empty main content, unknown view/component, empty dashboard) into `en.json`.
 - Dev: Vite proxies OAuth `/login?...`, `/auth`, and `/logo` to the local Stalwart server so interactive `/login` works without `VITE_ACCESS_TOKEN`.
+- Queued messages list: empty and backlog guidance with links to Delivery Trace and Log Entries when those views are accessible.
 
 ## [1.1.4] - 2026-08-04
 
