@@ -73,7 +73,9 @@ Additions in this fork:
 - **Roles list**: Enabled/Disabled Permissions count columns, so you can see a role's scope without opening it.
 - **User menu**: current account name/email and an account switcher in the header dropdown, alongside Appearance settings.
 - **Mailboxes list**: shown as an indented hierarchy instead of a flat list.
-- **Queued messages**: empty/backlog guidance with links to Delivery Trace and Log Entries.
+- **Queued messages**: empty/backlog guidance with links to Delivery Trace and Log Entries; **Size** shown as human units (B / KB / MB / GB / TB), including when the schema still marks the field as a plain integer.
+- **Byte sizes everywhere**: list, detail, and form fields for byte quantities (`size`, quotas, …) use the same dynamic unit ladder — no unitless `1,254`-style counts.
+- **Store / DNS type icons**: brand assets for known backends (S3→AWS, PostgreSQL, Redis, Cloudflare, …) plus Lucide stand-ins for FileSystem, Default, Sharded, ElasticSearch, LDAP, and DNS providers without a local logo — paths respect Stalwart’s `/admin` (or `/account`) mount so icons work in production, not only in local Vite.
 - **Log Entries**: client-side Level/Event filters (“Exact match only”), named presets, optional auto-refresh, and a rate-limited Refresh button.
 - **Report lists**: Pass/Quarantine/Reject (DMARC), Successful/Failed Sessions (TLS), Incidents + Feedback Type (ARF); coloured badges when non-zero; **Problems only** toggle.
 - **Open in new tab**: sidebar, header menu, list Create/rows, command palette, and Back/Cancel use real links so middle-click and the browser context menu work.

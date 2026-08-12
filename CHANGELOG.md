@@ -4,10 +4,15 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-08-12
+
 ### Fixed
 - Backend / DNS brand icons in production: paths are resolved against the document `<base href>` (e.g. `/admin/`) instead of absolute `/icons/...`, which ignored Stalwart’s mount prefix and 404’d.
 - Store-type / backend selects: S3 uses the AWS mark; FileSystem, Default, Sharded, ElasticSearch, Meilisearch, LDAP, SQL, OIDC, and DNS providers without a local brand asset show Lucide stand-ins instead of a blank icon slot.
 - List/detail Size columns whose schema still marks byte fields as plain integers (e.g. queued messages) now use the shared dynamic size formatter (B/KB/MB/GB/TB) instead of a unitless number such as `1,254` (`byte-size-number-format`).
+
+### Changed
+- README: document human byte sizes, production-safe backend icons, and related fork polish.
 
 ## [1.2.1] - 2026-08-12
 
