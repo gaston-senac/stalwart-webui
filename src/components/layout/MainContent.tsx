@@ -29,6 +29,9 @@ const TraceDetailView = lazy(() =>
   import('@/features/tracing/components/TraceDetailView').then((m) => ({ default: m.TraceDetailView })),
 );
 const ActionPage = lazy(() => import('@/features/actions/ActionPage').then((m) => ({ default: m.ActionPage })));
+const OnboardingChecklistPage = lazy(() =>
+  import('@/features/onboarding/OnboardingChecklistPage').then((m) => ({ default: m.OnboardingChecklistPage })),
+);
 
 interface MainContentProps {
   viewName?: string;
@@ -74,6 +77,9 @@ function MainContentView({ viewName, id, section }: MainContentProps) {
     }
     if (componentName === 'LiveTracing') {
       return <LiveTracingPage />;
+    }
+    if (componentName === 'Onboarding') {
+      return <OnboardingChecklistPage />;
     }
     return (
       <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">

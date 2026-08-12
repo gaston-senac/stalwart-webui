@@ -368,6 +368,33 @@
     "title": "Signing in",
     "tokenExchangeFailed": "Token exchange failed: {{status}} {{statusText}}"
   },
+  "onboarding": {
+    "title": "Getting Started",
+    "subtitle": "A quick checklist for a new Stalwart install. {{done}} of {{total}} done.",
+    "unknown": "Couldn't be checked — you may not have permission to view this.",
+    "moreTitle": "Want to go further?",
+    "moreDescription": "The Dashboard (Enterprise) and Delivery tests page cover live server metrics and outbound delivery diagnostics.",
+    "domain": {
+      "title": "Configure a domain",
+      "description": "At least one domain must be added and enabled before this server can handle mail for it.",
+      "action": "Go to Domains"
+    },
+    "dkim": {
+      "title": "Set up DKIM signing",
+      "description": "A DKIM signature lets receiving servers verify mail actually came from your domain.",
+      "action": "Go to DKIM Signatures"
+    },
+    "certificate": {
+      "title": "Install a valid TLS certificate",
+      "description": "Required for encrypted SMTP/IMAP/HTTPS connections. Checked for at least one certificate that has not expired.",
+      "action": "Go to TLS Certificates"
+    },
+    "admin": {
+      "title": "Create an administrator account",
+      "description": "A named admin account, separate from the break-glass recovery admin, should be used for day-to-day management.",
+      "action": "Go to Accounts"
+    }
+  },
   "otp": {
     "clipboardBlocked": "Your browser blocked clipboard access.",
     "codeIncorrect": "That code is incorrect. Make sure your authenticator clock is in sync.",

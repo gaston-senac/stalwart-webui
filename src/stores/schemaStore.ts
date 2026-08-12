@@ -5,7 +5,38 @@
  */
 
 import { create } from 'zustand';
-import type { Schema, LayoutSubItem } from '@/types/schema';
+import type { Schema, LayoutSubItem, LayoutItem } from '@/types/schema';
+
+// SCHEMA-DEVIATION: onboarding-checklist-nav-entry (see SCHEMA_DEVIATIONS.md)
+//
+// The sidebar is entirely server-driven (schema.layouts) — there's no
+// mechanism for the schema to describe a client-only page like this one, so
+// the link is spliced into the first layout's items right after Dashboard,
+// once, here (the single place the raw schema enters app state) rather than
+// in every consumer (Sidebar, search index, etc).
+function withOnboardingNavEntry(schema: Schema): Schema {
+  const first = schema.layouts[0];
+  if (!first) return schema;
+
+  const alreadyPresent = first.items.some(
+    (item) => 'link' in item && item.link.viewName === 'CustomComponent/Onboarding',
+  );
+  if (alreadyPresent) return schema;
+
+  const onboardingLink: LayoutItem = {
+    link: { name: 'Getting Started', icon: 'rocket', viewName: 'CustomComponent/Onboarding' },
+  };
+  const dashboardIdx = first.items.findIndex(
+    (item) => 'link' in item && item.link.viewName === 'CustomComponent/Dashboard',
+  );
+  const insertAt = dashboardIdx === -1 ? 0 : dashboardIdx + 1;
+  const items = [...first.items.slice(0, insertAt), onboardingLink, ...first.items.slice(insertAt)];
+
+  return {
+    ...schema,
+    layouts: [{ ...first, items }, ...schema.layouts.slice(1)],
+  };
+}
 
 export interface SearchIndexEntry {
   text: string;
@@ -163,7 +194,8 @@ export const useSchemaStore = create<SchemaState>()((set) => ({
   viewToSection: {},
   searchIndex: [],
 
-  setSchema: (schema) => {
+  setSchema: (rawSchema) => {
+    const schema = withOnboardingNavEntry(rawSchema);
     const { viewToSection, linkEntries } = walkLayouts(schema);
     const searchIndex = buildSearchIndex(schema, viewToSection, linkEntries);
     set({

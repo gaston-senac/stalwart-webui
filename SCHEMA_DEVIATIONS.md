@@ -46,6 +46,13 @@ itself stays byte-for-byte alignable with upstream's version of the file.
 - **Why**: Stalwart's JMAP `x:Log/query` returns `unsupportedFilter` for both properties today, even though they're returned per row.
 - **Ideal fix**: `stalwartlabs/stalwart` accepts `level`/`event` as real query filters; the schema then advertises them normally and `logFilters.ts` + the `ClientOnlyFilterEnum` augmentation are deleted.
 
+### `onboarding-checklist-nav-entry` 🟡
+
+- **Where**: [`src/stores/schemaStore.ts`](src/stores/schemaStore.ts) — `withOnboardingNavEntry`, applied once in `setSchema`; [`src/features/onboarding/OnboardingChecklistPage.tsx`](src/features/onboarding/OnboardingChecklistPage.tsx); routed in [`src/components/layout/MainContent.tsx`](src/components/layout/MainContent.tsx)
+- **What**: splices a "Getting Started" link (`CustomComponent/Onboarding`) into the first layout's items, right after Dashboard — the server's `schema.layouts` doesn't (and has no way to) describe this page, so the nav entry is fabricated client-side rather than read from the schema. The page itself only reads real, already-editable data (domain `isEnabled`, DKIM signature presence, certificate `notValidAfter`, an account with the `Admin` role) — nothing about the checklist's four checks is invented, only the fact that a page exists to show them together.
+- **Why**: this is a fork-only convenience page (a first-run checklist), not something `stalwartlabs/stalwart`'s schema is expected to ever model — unlike the other entries here, there's no server-side "ideal fix" that would make this unnecessary.
+- **Ideal fix**: none expected; kept as a deviation only so it stays clearly flagged as fork-only UI rather than looking like it came from the schema. Remove `withOnboardingNavEntry` and the `Onboarding` case in `MainContent.tsx` to drop it.
+
 ### `account-quota-usage-column` 🟡
 
 - **Where**: [`src/lib/accountColumns.ts`](src/lib/accountColumns.ts)
