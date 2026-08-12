@@ -838,11 +838,17 @@ export function DynamicForm({ viewName, objectId }: DynamicFormProps) {
                 );
 
                 if (enterpriseDisabled) {
+                  const enterpriseHintId = `enterprise-disabled-${formField.name}`;
                   return (
                     <TooltipProvider key={formField.name}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="opacity-60">{widget}</div>
+                          <div className="space-y-1 opacity-60" aria-disabled="true">
+                            <div aria-describedby={enterpriseHintId}>{widget}</div>
+                            <p id={enterpriseHintId} className="text-xs text-muted-foreground">
+                              {t('enterprise.featureDisabled', 'This feature requires an Enterprise license.')}
+                            </p>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>{t('enterprise.featureDisabled', 'This feature requires an Enterprise license.')}</p>

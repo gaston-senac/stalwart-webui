@@ -706,6 +706,8 @@ export function DynamicList({ viewName }: DynamicListProps) {
   const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
 
   const [filtersOpen, setFiltersOpen] = useState(() => Object.keys(readUrlFilters()).length > 0);
+  const filtersPanelRef = useRef<HTMLDivElement>(null);
+  const filtersWereOpen = useRef(filtersOpen);
   const [filterValues, setFilterValues] = useState<Record<string, string>>(readUrlFilters);
   const [appliedFilters, setAppliedFilters] = useState<Record<string, string>>(readUrlFilters);
 
@@ -753,6 +755,19 @@ export function DynamicList({ viewName }: DynamicListProps) {
       if (refreshCooldownTimer.current) clearTimeout(refreshCooldownTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    const justOpened = filtersOpen && !filtersWereOpen.current;
+    filtersWereOpen.current = filtersOpen;
+    if (!justOpened) return;
+    const frame = requestAnimationFrame(() => {
+      const el = filtersPanelRef.current?.querySelector<HTMLElement>(
+        'input:not([type="hidden"]), button, [role="combobox"], textarea, select',
+      );
+      el?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [filtersOpen]);
 
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [activeWebApp, setActiveWebApp] = useState<Record<string, unknown> | null>(null);
@@ -1610,10 +1625,13 @@ export function DynamicList({ viewName }: DynamicListProps) {
 
   function renderFilter(filterDef: FilterDef): React.ReactNode {
     const value = filterValues[filterDef.field] ?? '';
+    const inputId = `list-filter-${filterDef.field}`;
 
     const wrapper = (content: React.ReactNode) => (
       <div key={filterDef.field} className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-muted-foreground">{filterDef.label}</label>
+        <label htmlFor={inputId} className="text-xs font-medium text-muted-foreground">
+          {filterDef.label}
+        </label>
         {content}
       </div>
     );
@@ -1623,6 +1641,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
         return wrapper(
           <>
             <Input
+              id={inputId}
               placeholder={t('list.filterPlaceholder', 'Search {{label}}...', { label: filterDef.label.toLowerCase() })}
               value={value}
               onChange={(e) => handleFilterChange(filterDef.field, e.target.value)}
@@ -1652,7 +1671,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
 
         return wrapper(
           <Select value={value || '__all__'} onValueChange={(v) => handleFilterSelectChange(filterDef.field, v)}>
-            <SelectTrigger>
+            <SelectTrigger id={inputId}>
               <SelectValue placeholder={filterDef.label} />
             </SelectTrigger>
             <SelectContent>
@@ -1671,6 +1690,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
         if (!isXPrefixed) {
           return wrapper(
             <Input
+              id={inputId}
               type="number"
               placeholder={filterDef.label}
               value={value}
@@ -1696,6 +1716,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
               </SelectContent>
             </Select>
             <Input
+              id={inputId}
               type="number"
               placeholder={filterDef.label}
               value={value}
@@ -1711,6 +1732,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
         if (!isXPrefixed) {
           return wrapper(
             <Input
+              id={inputId}
               type="date"
               value={value}
               onChange={(e) => handleFilterChange(filterDef.field, e.target.value)}
@@ -1733,6 +1755,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
               </SelectContent>
             </Select>
             <Input
+              id={inputId}
               type="date"
               value={value}
               onChange={(e) => handleFilterChange(filterDef.field, e.target.value)}
@@ -1776,26 +1799,33 @@ export function DynamicList({ viewName }: DynamicListProps) {
     }
   }
 
-  function renderSortIndicator(colName: string): React.ReactNode {
+  function renderSortIndicator(colName: string, colLabel: string): React.ReactNode {
     if (!sortableFields.has(colName) && !clientSortableColumns.has(colName)) return null;
     const isActive = sort?.field === colName;
+    const stateKey = !isActive ? 'sortNone' : sort.ascending ? 'sortAscending' : 'sortDescending';
+    const stateLabel = t(`list.${stateKey}`, isActive ? (sort.ascending ? 'ascending' : 'descending') : 'not sorted');
     return (
       <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           toggleSort(colName);
         }}
         className="ml-1 inline-flex items-center"
         title={t('list.sort', 'Sort')}
+        aria-label={t('list.sortByColumn', 'Sort by {{column}}, currently {{state}}', {
+          column: colLabel,
+          state: stateLabel,
+        })}
       >
         {isActive ? (
           sort.ascending ? (
-            <ChevronUp className="h-4 w-4" />
+            <ChevronUp className="h-4 w-4" aria-hidden />
           ) : (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-4 w-4" aria-hidden />
           )
         ) : (
-          <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+          <ArrowUpDown className="h-3 w-3 text-muted-foreground" aria-hidden />
         )}
       </button>
     );
@@ -1825,8 +1855,14 @@ export function DynamicList({ viewName }: DynamicListProps) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
-            <MoreHorizontal className="h-4 w-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={(e) => e.stopPropagation()}
+            aria-label={t('list.rowActions', 'Actions for this item')}
+          >
+            <MoreHorizontal className="h-4 w-4" aria-hidden />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
@@ -1843,6 +1879,11 @@ export function DynamicList({ viewName }: DynamicListProps) {
                 <DropdownMenuItem
                   key={`${action.type}-${idx}`}
                   className={isDestructive ? 'text-destructive' : undefined}
+                  aria-label={
+                    locked
+                      ? `${action.label}. ${t('enterprise.featureDisabled', 'This feature requires an Enterprise license.')}`
+                      : undefined
+                  }
                   onClick={(e) => {
                     e.stopPropagation();
                     if (locked) {
@@ -1858,7 +1899,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
                   }}
                 >
                   {action.label}
-                  {locked && <Lock className="ml-auto h-3 w-3 text-muted-foreground" />}
+                  {locked && <Lock className="ml-auto h-3 w-3 text-muted-foreground" aria-hidden />}
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem key={`${action.type}-${idx}`} asChild>
@@ -2009,7 +2050,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
             )}
           </div>
           <CollapsibleContent>
-            <div className="mt-2 rounded-lg border bg-background shadow-sm">
+            <div ref={filtersPanelRef} className="mt-2 rounded-lg border bg-background shadow-sm">
               <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
                 {list.filters.map((filterDef) => renderFilter(filterDef))}
               </div>
@@ -2192,10 +2233,11 @@ export function DynamicList({ viewName }: DynamicListProps) {
             but lets wide column sets scroll horizontally inside this wrapper. */}
         <div className="overflow-x-auto overscroll-x-contain rounded-[calc(var(--radius-lg)-1px)] [-webkit-overflow-scrolling:touch]">
           <table className="w-max min-w-full text-sm">
+            <caption className="sr-only">{list.pluralName}</caption>
             <thead>
               <tr className="border-b bg-muted">
                 {hasMassActions && (
-                  <th className="w-10 px-3 py-3 whitespace-nowrap">
+                  <th scope="col" className="w-10 px-3 py-3 whitespace-nowrap">
                     <Checkbox
                       checked={items.length > 0 && selectedIds.size === items.length}
                       onCheckedChange={toggleSelectAll}
@@ -2203,23 +2245,36 @@ export function DynamicList({ viewName }: DynamicListProps) {
                     />
                   </th>
                 )}
-                {displayColumns.map((col) => (
-                  <th
-                    key={col.name}
-                    className={
-                      col.name === 'subject'
-                        ? 'max-w-[20rem] px-3 py-3 text-left font-medium text-muted-foreground'
-                        : 'px-3 py-3 text-left font-medium text-muted-foreground whitespace-nowrap'
-                    }
-                  >
-                    <div className="flex items-center">
-                      {col.label}
-                      {renderSortIndicator(col.name)}
-                    </div>
-                  </th>
-                ))}
+                {displayColumns.map((col) => {
+                  const sortable = sortableFields.has(col.name) || clientSortableColumns.has(col.name);
+                  const isActive = sort?.field === col.name;
+                  const ariaSort = !sortable
+                    ? undefined
+                    : !isActive
+                      ? 'none'
+                      : sort.ascending
+                        ? 'ascending'
+                        : 'descending';
+                  return (
+                    <th
+                      key={col.name}
+                      scope="col"
+                      aria-sort={ariaSort}
+                      className={
+                        col.name === 'subject'
+                          ? 'max-w-[20rem] px-3 py-3 text-left font-medium text-muted-foreground'
+                          : 'px-3 py-3 text-left font-medium text-muted-foreground whitespace-nowrap'
+                      }
+                    >
+                      <div className="flex items-center">
+                        {col.label}
+                        {renderSortIndicator(col.name, col.label)}
+                      </div>
+                    </th>
+                  );
+                })}
                 {hasItemActions && (
-                  <th className="w-12 px-3 py-3 text-right font-medium text-muted-foreground whitespace-nowrap">
+                  <th scope="col" className="w-12 px-3 py-3 text-right font-medium text-muted-foreground whitespace-nowrap">
                     {t('list.actions', 'Actions')}
                   </th>
                 )}
@@ -2311,7 +2366,18 @@ export function DynamicList({ viewName }: DynamicListProps) {
                   return (
                     <tr
                       key={itemId}
-                      className="border-b cursor-pointer transition-colors hover:bg-muted/50"
+                      tabIndex={detailPath ? 0 : undefined}
+                      role={detailPath ? 'link' : undefined}
+                      aria-label={
+                        detailPath
+                          ? t('list.openItem', 'Open {{name}}', { name: list.singularName })
+                          : undefined
+                      }
+                      className={
+                        detailPath
+                          ? 'border-b cursor-pointer transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset'
+                          : 'border-b'
+                      }
                       onClick={(e) => {
                         if ((e.target as HTMLElement).closest('a, button, input, [role="checkbox"], [role="menuitem"]')) {
                           return;
@@ -2325,6 +2391,15 @@ export function DynamicList({ viewName }: DynamicListProps) {
                         }
                         e.preventDefault();
                         openDetail(true);
+                      }}
+                      onKeyDown={(e) => {
+                        if (!detailPath) return;
+                        if (e.key !== 'Enter' && e.key !== ' ') return;
+                        if ((e.target as HTMLElement).closest('a, button, input, [role="checkbox"], [role="menuitem"]')) {
+                          return;
+                        }
+                        e.preventDefault();
+                        openDetail(e.metaKey || e.ctrlKey);
                       }}
                     >
                       {hasMassActions && (

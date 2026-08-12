@@ -294,6 +294,12 @@
   "list": {
     "actionWithCount": "{{action}} ({{count}} {{name}})",
     "actions": "Actions",
+    "openItem": "Open {{name}}",
+    "rowActions": "Actions for this item",
+    "sortAscending": "ascending",
+    "sortByColumn": "Sort by {{column}}, currently {{state}}",
+    "sortDescending": "descending",
+    "sortNone": "not sorted",
     "allItemsSelected": "All {{total}} items matching filters are selected.",
     "allPageSelected": "All {{count}} items on this page are selected.",
     "bulkErrorGrouped": "{{count}} items: {{message}}",
