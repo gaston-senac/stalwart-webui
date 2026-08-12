@@ -106,19 +106,22 @@ container so SMTP picks them up, then delivers sample `.eml` fixtures over
 SMTP to `alice@example.org`. External reports cannot be created via JMAP.
 Idempotent if any DMARC external report already exists.
 
-## 4. Get an access token
+## 4. Sign in (interactive login or access token)
 
-For local development it's simpler to skip interactive login and use a
-bearer token directly via `VITE_ACCESS_TOKEN` (see `.env.development`).
+### Interactive login (OAuth)
 
-> **Note:** the interactive login form (the one shown at `/login`) does
-> not work against `npm run dev` alone — don't spend time debugging it.
-> `/api/discover` returns a relative `authorization_endpoint` (`/login`),
-> which in production is served by the Stalwart backend itself, but in
-> dev is intercepted by the Vite-served React SPA instead, so the OAuth
-> flow silently loops back to an empty login form instead of reaching a
-> real authorization server. Always use `dev-token.sh`/`dev-token.ps1`
-> below for local development.
+With the Vite proxy (`/api`, `/jmap`, `/auth`, and OAuth `/login?...`
+forwarded to the Stalwart container), the SPA username form at `/login`
+can complete the real authorize → password → `/oauth/callback` flow.
+Leave `VITE_ACCESS_TOKEN` unset (or remove it from
+`.env.development.local`), run `npm run dev`, open
+`http://localhost:5173/login`, and sign in as `devadmin` (or another
+account from seed).
+
+### Access token (skip the login form)
+
+For a quicker loop you can still inject a bearer token via
+`VITE_ACCESS_TOKEN` (see `.env.development`).
 
 ```bash
 # Windows / PowerShell
@@ -135,8 +138,8 @@ create a Stalwart API key with the requested expiry (default 3 hours,
 overridable per invocation — this is a genuine per-request duration, not
 a global setting), then write its secret to `.env.development.local`
 (gitignored, never committed) as `VITE_ACCESS_TOKEN`. Re-run the script
-and restart `npm run dev` once the token expires (the UI starts returning
-401s).
+once the token expires (the UI starts returning 401s); Vite restarts on
+its own when that file changes.
 
 The `STALWART_RECOVERY_ADMIN` account is intentionally not used here: it's
 a break-glass credential and its tokens always expire in a fixed 1 hour
