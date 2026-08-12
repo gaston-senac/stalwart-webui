@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file. This projec
 - Object-list combobox cache: invalidate only related types after create/update/destroy instead of wiping every list on each view change.
 - DMARC/TLS/ARF lists: "Problems only" toggle to show reports with quarantine/reject, failed sessions, or incidents (`report-problems-only-filter`).
 - Community/OSS home: land on Overview when the Enterprise Dashboard is locked or hidden; Enterprise upsell offers “Open Overview”.
+- List text filters show “Exact match only”; empty state distinguishes “no filter matches” (with Reset) from a truly empty list (Create).
 
 ## [1.1.4] - 2026-08-04
 

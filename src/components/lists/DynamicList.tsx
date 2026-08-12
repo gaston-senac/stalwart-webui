@@ -1524,6 +1524,10 @@ export function DynamicList({ viewName }: DynamicListProps) {
   // SCHEMA-DEVIATION: bulk-quota-change-action (see SCHEMA_DEVIATIONS.md)
   const canBulkChangeQuota = hasQuotaUsageColumn && canUpdate;
 
+  const filtersActive =
+    problemsOnly ||
+    Object.entries(appliedFilters).some(([key, val]) => !key.endsWith('Op') && val.trim() !== '');
+
   const pageStart = clientAllItems !== null ? clientPage * PAGE_SIZE : anchorStack.length * PAGE_SIZE;
   const rangeStart = pageStart + 1;
   const rangeEnd = pageStart + items.length;
@@ -1543,12 +1547,15 @@ export function DynamicList({ viewName }: DynamicListProps) {
     switch (filterDef.type) {
       case 'text':
         return wrapper(
-          <Input
-            placeholder={t('list.filterPlaceholder', 'Search {{label}}...', { label: filterDef.label.toLowerCase() })}
-            value={value}
-            onChange={(e) => handleFilterChange(filterDef.field, e.target.value)}
-            onKeyDown={handleFilterKeyDown}
-          />,
+          <>
+            <Input
+              placeholder={t('list.filterPlaceholder', 'Search {{label}}...', { label: filterDef.label.toLowerCase() })}
+              value={value}
+              onChange={(e) => handleFilterChange(filterDef.field, e.target.value)}
+              onKeyDown={handleFilterKeyDown}
+            />
+            <p className="text-[11px] text-muted-foreground">{t('list.exactMatchOnly', 'Exact match only')}</p>
+          </>,
         );
 
       case 'enum': {
@@ -2139,14 +2146,34 @@ export function DynamicList({ viewName }: DynamicListProps) {
                   >
                     <div className="flex flex-col items-center gap-3">
                       <Inbox className="h-10 w-10 text-muted-foreground/50" aria-hidden />
-                      <p className="text-muted-foreground">{t('list.noResults', 'No results found')}</p>
-                      {canCreate && obj.objectType.type === 'object' && createPath && (
-                        <Button asChild size="sm" className="mt-1">
-                          <Link to={createPath}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            {t('list.create', 'Create {{name}}', { name: list.singularName })}
-                          </Link>
-                        </Button>
+                      {filtersActive ? (
+                        <>
+                          <p className="text-muted-foreground">
+                            {t('list.noFilterResults', 'No results match these filters')}
+                          </p>
+                          <p className="max-w-sm text-xs text-muted-foreground">
+                            {t(
+                              'list.noFilterResultsHint',
+                              'Text filters require an exact value, not a partial search.',
+                            )}
+                          </p>
+                          <Button type="button" size="sm" variant="outline" className="mt-1" onClick={resetFilters}>
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            {t('list.resetFilters', 'Reset')}
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-muted-foreground">{t('list.noResults', 'No results found')}</p>
+                          {canCreate && obj.objectType.type === 'object' && createPath && (
+                            <Button asChild size="sm" className="mt-1">
+                              <Link to={createPath}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                {t('list.create', 'Create {{name}}', { name: list.singularName })}
+                              </Link>
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   </td>
