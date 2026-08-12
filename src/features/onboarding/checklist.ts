@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-SEL
  */
 
-import { jmapQueryAllAndGet, getAccountId } from '@/services/jmap/client';
+import { getAccountId, jmapQuery, jmapQueryAllAndGet } from '@/services/jmap/client';
+import type { JmapQueryResponse } from '@/types/jmap';
 
 export const ONBOARDING_VIEW_NAME = 'CustomComponent/Onboarding';
 
@@ -18,6 +19,20 @@ export interface ChecklistItemDef {
   actionLabelKey: [string, string];
   actionHref: string;
   check: () => Promise<boolean>;
+  /**
+   * When false, the item is shown for awareness but does not block hiding
+   * Getting Started (e.g. inbound DMARC reports may arrive later).
+   * Defaults to true.
+   */
+  requiredForCompletion?: boolean;
+}
+
+export interface OnboardingFurtherLink {
+  id: string;
+  titleKey: [string, string];
+  descriptionKey: [string, string];
+  href: string;
+  external?: boolean;
 }
 
 async function hasEnabledDomain(): Promise<boolean> {
@@ -53,11 +68,29 @@ async function hasAdminAccount(): Promise<boolean> {
   });
 }
 
+async function hasAnyObject(objectType: string): Promise<boolean> {
+  const accountId = getAccountId(objectType);
+  const responses = await jmapQuery(objectType, accountId, {
+    limit: 1,
+    position: 0,
+    calculateTotal: true,
+  });
+  const body = responses[0];
+  if (!body || body[0] === 'error') return false;
+  const result = body[1] as unknown as JmapQueryResponse;
+  if (typeof result.total === 'number') return result.total > 0;
+  return (result.ids?.length ?? 0) > 0;
+}
+
+async function hasDmarcExternalReport(): Promise<boolean> {
+  return hasAnyObject('x:DmarcExternalReport');
+}
+
 // SCHEMA-DEVIATION: onboarding-checklist-nav-entry (see SCHEMA_DEVIATIONS.md)
 // Each item checks a real, already-editable property (domain enabled state,
 // DKIM signature presence, certificate expiry, an account with the Admin
-// role) — nothing here is fabricated data, only the checklist framing itself
-// is new.
+// role, inbound DMARC reports) — nothing here is fabricated data, only the
+// checklist framing itself is new.
 export const ONBOARDING_ITEMS: ChecklistItemDef[] = [
   {
     id: 'domain',
@@ -107,16 +140,55 @@ export const ONBOARDING_ITEMS: ChecklistItemDef[] = [
     actionHref: '/Management/x:Account/User',
     check: hasAdminAccount,
   },
+  {
+    id: 'dmarcReports',
+    permissionPrefix: 'sysDmarcExternalReport',
+    titleKey: ['onboarding.dmarcReports.title', 'Start receiving DMARC reports'],
+    descriptionKey: [
+      'onboarding.dmarcReports.description',
+      'Publish a DMARC DNS record that sends aggregate reports to this server. Optional — reports may take time to arrive.',
+    ],
+    actionLabelKey: ['onboarding.dmarcReports.action', 'Go to DMARC reports'],
+    actionHref: '/Management/x:DmarcExternalReport',
+    check: hasDmarcExternalReport,
+    requiredForCompletion: false,
+  },
+];
+
+/** Static doc links shown under “Want to go further?”. */
+export const ONBOARDING_DOC_LINKS: OnboardingFurtherLink[] = [
+  {
+    id: 'spf-docs',
+    titleKey: ['onboarding.further.spfTitle', 'Publish SPF'],
+    descriptionKey: [
+      'onboarding.further.spfDescription',
+      'Authorise this server to send mail for your domain (DNS TXT).',
+    ],
+    href: 'https://stalw.art/docs/auth/spf/',
+    external: true,
+  },
+  {
+    id: 'dmarc-docs',
+    titleKey: ['onboarding.further.dmarcTitle', 'Publish DMARC'],
+    descriptionKey: [
+      'onboarding.further.dmarcDescription',
+      'Ask receivers to report authentication results back to you.',
+    ],
+    href: 'https://stalw.art/docs/mta/reports/dmarc/',
+    external: true,
+  },
 ];
 
 /**
- * Returns true when every checklist item the user can query is already done
- * (or when they cannot query any of them — the page is then useless).
+ * Returns true when every *required* checklist item the user can query is
+ * already done (or when they cannot query any required items).
  */
 export async function isOnboardingComplete(
   canQuery: (permissionPrefix: string) => boolean,
 ): Promise<boolean> {
-  const checkable = ONBOARDING_ITEMS.filter((item) => canQuery(item.permissionPrefix));
+  const checkable = ONBOARDING_ITEMS.filter(
+    (item) => item.requiredForCompletion !== false && canQuery(item.permissionPrefix),
+  );
   if (checkable.length === 0) return true;
 
   const results = await Promise.all(

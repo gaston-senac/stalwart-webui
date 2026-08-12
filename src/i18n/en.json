@@ -373,7 +373,7 @@
     "subtitle": "A quick checklist for a new Stalwart install. {{done}} of {{total}} done.",
     "unknown": "Couldn't be checked — you may not have permission to view this.",
     "moreTitle": "Want to go further?",
-    "moreDescription": "The Dashboard (Enterprise) and Delivery tests page cover live server metrics and outbound delivery diagnostics.",
+    "moreDescription": "DNS authentication docs and related settings. The Enterprise Dashboard and Delivery tests cover live metrics and outbound diagnostics.",
     "domain": {
       "title": "Configure a domain",
       "description": "At least one domain must be added and enabled before this server can handle mail for it.",
@@ -393,6 +393,24 @@
       "title": "Create an administrator account",
       "description": "A named admin account, separate from the break-glass recovery admin, should be used for day-to-day management.",
       "action": "Go to Accounts"
+    },
+    "optional": "Optional",
+    "dmarcReports": {
+      "title": "Start receiving DMARC reports",
+      "description": "Publish a DMARC DNS record that sends aggregate reports to this server. Optional — reports may take time to arrive.",
+      "action": "Go to DMARC reports"
+    },
+    "further": {
+      "spfTitle": "Publish SPF",
+      "spfDescription": "Authorise this server to send mail for your domain (DNS TXT).",
+      "dmarcTitle": "Publish DMARC",
+      "dmarcDescription": "Ask receivers to report authentication results back to you.",
+      "spamTitle": "Review spam settings",
+      "spamDescription": "Tune classification and lists once mail is flowing.",
+      "listenersTitle": "Check network listeners",
+      "listenersDescription": "Confirm SMTP/IMAP/HTTPS listeners match how you expose the server.",
+      "openDocs": "Docs",
+      "open": "Open"
     }
   },
   "overview": {
