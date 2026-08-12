@@ -83,10 +83,10 @@ itself stays byte-for-byte alignable with upstream's version of the file.
 
 ### `bulk-quota-change-action` 🟡
 
-- **Where**: [`src/components/lists/DynamicList.tsx`](src/components/lists/DynamicList.tsx) — `canBulkChangeQuota` and the "Change quota…" `DropdownMenuItem`; [`src/components/lists/ChangeQuotaDialog.tsx`](src/components/lists/ChangeQuotaDialog.tsx)
-- **What**: adds a "Change quota…" bulk action to the Accounts and Groups lists (wherever the `quotaUsage` column already appears) that prompts for a new value, then applies it as a `quotas/maxDiskQuota` patch to every selected (or all-filter-matching) row via the same batched `executeMassAction` mechanism as any other bulk action.
+- **Where**: [`src/components/lists/DynamicList.tsx`](src/components/lists/DynamicList.tsx) — `canBulkChangeQuota` and the "Change quota…" `DropdownMenuItem`; [`src/components/lists/PromptSetPropertyDialog.tsx`](src/components/lists/PromptSetPropertyDialog.tsx) (generic client prompt); [`src/components/lists/ChangeQuotaDialog.tsx`](src/components/lists/ChangeQuotaDialog.tsx) (thin quota wrapper)
+- **What**: adds a "Change quota…" bulk action to the Accounts and Groups lists (wherever the `quotaUsage` column already appears) that prompts for a new value, then applies it as a `quotas/maxDiskQuota` patch to every selected (or all-filter-matching) row via the same batched `executeMassAction` mechanism as any other bulk action. The prompt UI is shared (`PromptSetPropertyDialog`, `format: 'size'` today) so further prompted bulk actions can reuse it without new one-off dialogs.
 - **Why**: `list.massActions` in the schema only supports fixed-value actions (`properties` is a static object) — there's no way for the server to declare a mass action that needs a value prompted from the admin, so a bulk "set everyone's quota to X" action can't be expressed there today, even though `quotas/maxDiskQuota` itself is a perfectly real, mutable property.
-- **Ideal fix**: the schema grows a mass-action variant that names a target property (and its type/format) to prompt for, e.g. `{"type": "promptSetProperty", "property": "quotas/maxDiskQuota", "format": "size"}`; once that exists, this dialog and the `canBulkChangeQuota` branch are deleted in favor of the generic prompted-mass-action UI every such action would then share.
+- **Ideal fix**: the schema grows a mass-action variant that names a target property (and its type/format) to prompt for, e.g. `{"type": "promptSetProperty", "property": "quotas/maxDiskQuota", "format": "size"}`; once that exists, this fork dialog and the `canBulkChangeQuota` branch are deleted in favor of the schema-driven prompted-mass-action UI.
 
 ### `sieve-script-active-column-fallback` 🟡
 
