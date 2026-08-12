@@ -6,7 +6,7 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Moon, Sun } from 'lucide-react';
+import { Check, Moon, Palette, Sun } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -26,11 +26,14 @@ export function AppearancePage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{t('appearance.label', 'Appearance')}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t('appearance.description', 'Customize how the interface looks and feels.')}
-        </p>
+      <div className="flex items-center gap-3">
+        <Palette className="h-7 w-7 shrink-0 text-primary" aria-hidden />
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{t('appearance.label', 'Appearance')}</h1>
+          <p className="text-sm text-muted-foreground">
+            {t('appearance.description', 'Customize how the interface looks and feels.')}
+          </p>
+        </div>
       </div>
 
       <Card>

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-SEL
  */
 
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, ScrollText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
@@ -69,11 +69,14 @@ export function ChangelogPage() {
         </CardContent>
       </Card>
 
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{t('changelog.label', 'Changelog')}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t('changelog.description', "What's new in this fork, release by release.")}
-        </p>
+      <div className="flex items-center gap-3">
+        <ScrollText className="h-7 w-7 shrink-0 text-primary" aria-hidden />
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{t('changelog.label', 'Changelog')}</h1>
+          <p className="text-sm text-muted-foreground">
+            {t('changelog.description', "What's new in this fork, release by release.")}
+          </p>
+        </div>
       </div>
 
       <ReactMarkdown components={components}>{publishedChangelog}</ReactMarkdown>
