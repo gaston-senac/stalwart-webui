@@ -23,6 +23,7 @@ import {
   RefreshCw,
   CornerDownRight,
   Download,
+  Inbox,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -1995,9 +1996,20 @@ export function DynamicList({ viewName }: DynamicListProps) {
                 <tr>
                   <td
                     colSpan={displayColumns.length + (hasMassActions ? 1 : 0) + (hasItemActions ? 1 : 0)}
-                    className="px-3 py-12 text-center text-muted-foreground"
+                    className="px-3 py-16 text-center"
                   >
-                    {t('list.noResults', 'No results found')}
+                    <div className="flex flex-col items-center gap-3">
+                      <Inbox className="h-10 w-10 text-muted-foreground/50" aria-hidden />
+                      <p className="text-muted-foreground">{t('list.noResults', 'No results found')}</p>
+                      {canCreate && obj.objectType.type === 'object' && createPath && (
+                        <Button asChild size="sm" className="mt-1">
+                          <Link to={createPath}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            {t('list.create', 'Create {{name}}', { name: list.singularName })}
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
