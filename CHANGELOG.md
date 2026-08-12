@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file. This projec
 - DMARC/TLS/ARF lists: "Problems only" toggle to show reports with quarantine/reject, failed sessions, or incidents (`report-problems-only-filter`).
 - Community/OSS home: land on Overview when the Enterprise Dashboard is locked or hidden; Enterprise upsell offers “Open Overview”.
 - List text filters show “Exact match only”; empty state distinguishes “no filter matches” (with Reset) from a truly empty list (Create).
+- Fetch-all list paths (client filters/sort, mailbox tree, problems-only, CSV export): warn above 2 000 matching rows and refuse above 10 000.
 
 ## [1.1.4] - 2026-08-04
 

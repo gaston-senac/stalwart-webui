@@ -319,6 +319,8 @@
     "exportCsv": "Export CSV",
     "exportSuccess": "Exported {{count}} rows to CSV",
     "exactMatchOnly": "Exact match only",
+    "fetchAllHardCap": "Refusing to load {{count}} matching rows into the browser (limit {{cap}}). Narrow filters or export from a smaller set.",
+    "fetchAllWarn": "Loading {{count}} rows into the browser — this may be slow.",
     "filterPlaceholder": "Search {{label}}...",
     "filters": "Filters",
     "noFilterResults": "No results match these filters",

@@ -75,6 +75,11 @@ import {
   jmapSet,
   getAccountId,
 } from '@/services/jmap/client';
+import {
+  evaluateFetchAllTotal,
+  FETCH_ALL_HARD_CAP,
+  probeQueryTotal,
+} from '@/lib/fetchAllGuardrails';
 
 import type { Schema, Field, MassAction, ItemAction, Filter as FilterDef } from '@/types/schema';
 import type { JmapSetResponse, JmapSetError } from '@/types/jmap';
@@ -894,10 +899,38 @@ export function DynamicList({ viewName }: DynamicListProps) {
           // on any property of either list. Report "problems only" also
           // needs the nested `report` blob (SCHEMA-DEVIATION:
           // report-problems-only-filter).
+          const fetchAllQuery = {
+            filter: Object.keys(filter).length > 0 ? filter : undefined,
+            sort: clientSortField ? undefined : sortArr,
+          };
+          const probeTotal = await probeQueryTotal(obj.objectName, accountId, fetchAllQuery);
+          const probe = evaluateFetchAllTotal(probeTotal);
+          if (!probe.ok) {
+            setError(
+              t('list.fetchAllHardCap', {
+                count: probe.total,
+                cap: FETCH_ALL_HARD_CAP,
+                defaultValue:
+                  'Refusing to load {{count}} matching rows into the browser (limit {{cap}}). Narrow filters or export from a smaller set.',
+              }),
+            );
+            setClientAllItems([]);
+            setItems([]);
+            setTotal(0);
+            return;
+          }
+          if (probe.warn) {
+            toast({
+              title: t('list.fetchAllWarn', {
+                count: probe.total,
+                defaultValue: 'Loading {{count}} rows into the browser — this may be slow.',
+              }),
+            });
+          }
           const { list: fullList } = await jmapQueryAllAndGet(
             obj.objectName,
             accountId,
-            { filter: Object.keys(filter).length > 0 ? filter : undefined, sort: clientSortField ? undefined : sortArr },
+            fetchAllQuery,
             properties,
           );
           let matched = fullList.filter((item) =>
@@ -989,6 +1022,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
       problemsOnly,
       needsReportProperty,
       viewName,
+      t,
     ],
   );
 
@@ -1015,10 +1049,36 @@ export function DynamicList({ viewName }: DynamicListProps) {
         const properties = buildFetchProperties(columns);
         const filter = buildFilter();
         const sortArr = buildSort();
+        const exportQuery = {
+          filter: Object.keys(filter).length > 0 ? filter : undefined,
+          sort: sortArr,
+        };
+        const probeTotal = await probeQueryTotal(obj.objectName, accountId, exportQuery);
+        const probe = evaluateFetchAllTotal(probeTotal);
+        if (!probe.ok) {
+          toast({
+            title: t('list.fetchAllHardCap', {
+              count: probe.total,
+              cap: FETCH_ALL_HARD_CAP,
+              defaultValue:
+                'Refusing to load {{count}} matching rows into the browser (limit {{cap}}). Narrow filters or export from a smaller set.',
+            }),
+            variant: 'destructive',
+          });
+          return;
+        }
+        if (probe.warn) {
+          toast({
+            title: t('list.fetchAllWarn', {
+              count: probe.total,
+              defaultValue: 'Loading {{count}} rows into the browser — this may be slow.',
+            }),
+          });
+        }
         const { list: fetched } = await jmapQueryAllAndGet(
           obj.objectName,
           accountId,
-          { filter: Object.keys(filter).length > 0 ? filter : undefined, sort: sortArr },
+          exportQuery,
           properties,
         );
         rowsSource = fetched;
