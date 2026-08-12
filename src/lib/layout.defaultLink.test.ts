@@ -24,7 +24,6 @@ function schemaWithLinks(): Schema {
 describe('findPreferredDefaultLinkInLayout', () => {
   const layout: Layout = {
     name: 'Management',
-    description: '',
     icon: 'home',
     items: [
       { link: { name: 'Dashboard', icon: 'gauge', viewName: 'CustomComponent/Dashboard' } },
