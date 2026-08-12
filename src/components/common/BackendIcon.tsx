@@ -23,6 +23,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import { normalizeBackendKey } from '@/lib/backendIconKey';
 import { publicAssetUrl } from '@/lib/publicAssetUrl';
 
 /** Brand files under `public/icons/backends/` (filename only — resolved via publicAssetUrl). */
@@ -159,10 +160,6 @@ const LUCIDE_FALLBACKS: Record<string, LucideIcon> = {
   tsig: KeyRound,
   deprecated1: CircleOff,
 };
-
-export function normalizeBackendKey(backend: string): string {
-  return backend.toLowerCase().replace(/[^a-z0-9]/g, '');
-}
 
 interface BackendIconProps {
   backend: string | null | undefined;

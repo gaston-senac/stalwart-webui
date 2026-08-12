@@ -7,16 +7,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { BackendIcon, normalizeBackendKey } from './BackendIcon';
-
-describe('normalizeBackendKey', () => {
-  it('strips non-alphanumerics and lowercases', () => {
-    expect(normalizeBackendKey('PostgreSql')).toBe('postgresql');
-    expect(normalizeBackendKey('S3')).toBe('s3');
-    expect(normalizeBackendKey('FileSystem')).toBe('filesystem');
-    expect(normalizeBackendKey('Redis-Cluster')).toBe('rediscluster');
-  });
-});
+import { BackendIcon } from './BackendIcon';
 
 describe('BackendIcon', () => {
   beforeEach(() => {
