@@ -14,8 +14,13 @@ export interface OverviewCardDef {
   icon: string;
   labelKey: [string, string];
   filter?: Record<string, unknown>;
-  /** Optional post-count enrichment (certificates valid/expired). */
-  enrich?: 'certificateValidity';
+  /**
+   * Optional post-count enrichment:
+   * - certificateValidity: valid / expired / expiring-soon
+   * - reportProblems: sample recent rows for quarantine/reject/failed/incidents
+   * - queueAttention: non-zero queue depth (no extra fetch)
+   */
+  enrich?: 'certificateValidity' | 'reportProblems' | 'queueAttention';
 }
 
 export const OVERVIEW_SECTIONS: Array<{
@@ -90,6 +95,7 @@ export const OVERVIEW_CARDS: OverviewCardDef[] = [
     viewName: 'x:QueuedMessage',
     icon: 'mail',
     labelKey: ['overview.cards.queuedMessages', 'Queued messages'],
+    enrich: 'queueAttention',
   },
   {
     id: 'apiKeys',
@@ -118,6 +124,7 @@ export const OVERVIEW_CARDS: OverviewCardDef[] = [
     viewName: 'x:DmarcExternalReport',
     icon: 'shield-check',
     labelKey: ['overview.cards.dmarcExternal', 'DMARC (inbound)'],
+    enrich: 'reportProblems',
   },
   {
     id: 'dmarcInternal',
@@ -125,6 +132,7 @@ export const OVERVIEW_CARDS: OverviewCardDef[] = [
     viewName: 'x:DmarcInternalReport',
     icon: 'shield-check',
     labelKey: ['overview.cards.dmarcInternal', 'DMARC (outbound)'],
+    enrich: 'reportProblems',
   },
   {
     id: 'tlsExternal',
@@ -132,6 +140,7 @@ export const OVERVIEW_CARDS: OverviewCardDef[] = [
     viewName: 'x:TlsExternalReport',
     icon: 'file-lock',
     labelKey: ['overview.cards.tlsExternal', 'TLS reports (inbound)'],
+    enrich: 'reportProblems',
   },
   {
     id: 'tlsInternal',
@@ -139,6 +148,7 @@ export const OVERVIEW_CARDS: OverviewCardDef[] = [
     viewName: 'x:TlsInternalReport',
     icon: 'file-lock',
     labelKey: ['overview.cards.tlsInternal', 'TLS reports (outbound)'],
+    enrich: 'reportProblems',
   },
   {
     id: 'arf',
@@ -146,5 +156,6 @@ export const OVERVIEW_CARDS: OverviewCardDef[] = [
     viewName: 'x:ArfExternalReport',
     icon: 'triangle-alert',
     labelKey: ['overview.cards.arf', 'ARF / abuse reports'],
+    enrich: 'reportProblems',
   },
 ];

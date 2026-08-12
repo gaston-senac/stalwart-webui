@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Schema } from '@/types/schema';
 import { OVERVIEW_CARDS } from '@/features/overview/cards';
-import { resolveQueryableCards } from '@/features/overview/fetchTotals';
+import { deriveAttention, resolveQueryableCards } from '@/features/overview/fetchTotals';
 
 function minimalSchema(): Schema {
   return {
@@ -64,5 +64,26 @@ describe('resolveQueryableCards', () => {
     const schema = minimalSchema();
     const cards = resolveQueryableCards(schema, OVERVIEW_CARDS, {}, () => false);
     expect(cards).toEqual([]);
+  });
+});
+
+describe('deriveAttention', () => {
+  it('flags queue backlog, cert expiry, and report problems', () => {
+    expect(deriveAttention({ enrich: 'queueAttention' } as never, { status: 'ok', total: 3 })).toBe('warn');
+    expect(deriveAttention({ enrich: 'certificateValidity' } as never, { status: 'ok', total: 2, expired: 1 })).toBe(
+      'danger',
+    );
+    expect(
+      deriveAttention({ enrich: 'certificateValidity' } as never, {
+        status: 'ok',
+        total: 2,
+        expired: 0,
+        expiringSoon: 1,
+      }),
+    ).toBe('warn');
+    expect(
+      deriveAttention({ enrich: 'reportProblems' } as never, { status: 'ok', total: 10, problemCount: 2 }),
+    ).toBe('danger');
+    expect(deriveAttention({ enrich: 'queueAttention' } as never, { status: 'ok', total: 0 })).toBe('none');
   });
 });

@@ -10,6 +10,7 @@ import {
   getReportSummaryValue,
   isReportSummaryColumn,
   listNeedsReportProperty,
+  reportHasProblems,
   summarizeArfFeedbackType,
   summarizeArfIncidents,
   summarizeDmarcDispositions,
@@ -103,5 +104,25 @@ describe('getReportSummaryValue / column helpers', () => {
     expect(getReportSummaryTone('tlsFailedSessions', 0)).toBe('muted');
     expect(getReportSummaryTone('dmarcPassCount', 10)).toBe('plain');
     expect(getReportSummaryTone('tlsSuccessfulSessions', 100)).toBe('plain');
+  });
+
+  it('reportHasProblems detects DMARC/TLS/ARF issues', () => {
+    expect(
+      reportHasProblems('x:DmarcExternalReport', {
+        report: { records: { a: { count: 2, evaluatedDisposition: 'quarantine' } } },
+      }),
+    ).toBe(true);
+    expect(
+      reportHasProblems('x:DmarcExternalReport', {
+        report: { records: { a: { count: 2, evaluatedDisposition: 'pass' } } },
+      }),
+    ).toBe(false);
+    expect(
+      reportHasProblems('x:TlsExternalReport', {
+        report: { policies: { p: { totalSuccessfulSessions: 1, totalFailedSessions: 3 } } },
+      }),
+    ).toBe(true);
+    expect(reportHasProblems('x:ArfExternalReport', { report: { incidents: 2 } })).toBe(true);
+    expect(reportHasProblems('x:ArfExternalReport', { report: { incidents: 0 } })).toBe(false);
   });
 });

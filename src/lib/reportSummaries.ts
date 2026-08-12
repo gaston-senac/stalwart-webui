@@ -161,3 +161,22 @@ export function getReportSummaryTone(colName: string, value: string | number): R
       return 'plain';
   }
 }
+
+/**
+ * Whether a report row needs attention (quarantine/reject, failed TLS sessions,
+ * or ARF incidents). Used by Overview attention badges and the problems-only list filter.
+ */
+export function reportHasProblems(viewName: string, item: Record<string, unknown>): boolean {
+  const report = item.report;
+  if (viewName.includes('Dmarc')) {
+    const d = summarizeDmarcDispositions(report);
+    return d.quarantine > 0 || d.reject > 0;
+  }
+  if (viewName.includes('Tls')) {
+    return summarizeTlsSessions(report).failed > 0;
+  }
+  if (viewName.includes('Arf')) {
+    return summarizeArfIncidents(report) > 0;
+  }
+  return false;
+}

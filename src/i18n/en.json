@@ -403,6 +403,13 @@
     "unavailable": "—",
     "noPermission": "No inventory objects are available with your current permissions.",
     "certificatesDetail": "{{valid}} valid · {{expired}} expired",
+    "certificatesValid": "{{count}} valid",
+    "certificatesExpired": "{{count}} expired",
+    "certificatesExpiring": "{{count}} expiring soon",
+    "reportProblemsDetail": "{{count}} with issues in latest {{sample}}",
+    "queueBacklog": "Messages waiting in the queue",
+    "attentionWarn": "Attention",
+    "attentionDanger": "Needs attention",
     "sections": {
       "directory": "Directory",
       "mailReadiness": "Mail readiness",
