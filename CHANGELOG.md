@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file. This projec
 - List text filters show “Exact match only”; empty state distinguishes “no filter matches” (with Reset) from a truly empty list (Create).
 - Fetch-all list paths (client filters/sort, mailbox tree, problems-only, CSV export): warn above 2 000 matching rows and refuse above 10 000.
 - Dev server restarts automatically when `.env.development.local` changes (e.g. after regenerating a token).
+- Command palette: CustomComponent pages (Overview, Getting Started, …) and Appearance/Changelog are searchable; fork pages get keywords (`queue`, `dkim`, `theme`, …).
 
 ## [1.1.4] - 2026-08-04
 

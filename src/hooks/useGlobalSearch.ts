@@ -10,7 +10,12 @@ import { List, Plus, Settings } from 'lucide-react';
 import { useSchemaStore, type SearchIndexEntry } from '@/stores/schemaStore';
 import { useAccountStore } from '@/stores/accountStore';
 import { resolveObject } from '@/lib/schemaResolver';
+import { isLinkVisible } from '@/lib/layout';
 import type { Schema } from '@/types/schema';
+
+function isClientOnlySearchPage(viewName: string): boolean {
+  return viewName === 'Appearance' || viewName === 'Changelog';
+}
 
 const MAX_RESULTS = 15;
 const DEBOUNCE_MS = 300;
@@ -71,6 +76,8 @@ export function useGlobalSearch(onAfterSelect?: () => void) {
   const schema = useSchemaStore((s) => s.schema);
   const searchIndex = useSchemaStore((s) => s.searchIndex);
   const hasObjectPermission = useAccountStore((s) => s.hasObjectPermission);
+  const hasPermission = useAccountStore((s) => s.hasPermission);
+  const edition = useAccountStore((s) => s.edition);
 
   const handleQueryChange = useCallback((value: string) => {
     setQuery(value);
@@ -93,19 +100,23 @@ export function useGlobalSearch(onAfterSelect?: () => void) {
       .filter((s) => s.length > 0);
     if (tokens.length === 0) return [];
 
+    const canGet = (prefix: string) => hasObjectPermission(prefix, 'Get');
+
     const filtered = searchIndex.filter((entry) => {
       const haystack = (entry.text + ' ' + (entry.keywords?.join(' ') ?? '')).toLowerCase();
       for (const token of tokens) {
         if (!haystack.includes(token)) return false;
       }
-      const resolved = resolveObject(schema, entry.viewName);
-      if (!resolved) return false;
-      return hasObjectPermission(resolved.permissionPrefix, 'Get');
+      // SCHEMA-DEVIATION: community-overview-nav-entry / onboarding-checklist-nav-entry
+      // CustomComponent/* and Appearance/Changelog are not schema objects — resolveObject
+      // used to drop them from the palette. Use layout visibility instead.
+      if (isClientOnlySearchPage(entry.viewName)) return true;
+      return isLinkVisible(schema, entry.viewName, edition, canGet, hasPermission);
     });
 
     filtered.sort((a, b) => TYPE_ORDER[a.type] - TYPE_ORDER[b.type]);
     return filtered.slice(0, MAX_RESULTS);
-  }, [debouncedQuery, searchIndex, schema, hasObjectPermission]);
+  }, [debouncedQuery, searchIndex, schema, hasObjectPermission, hasPermission, edition]);
 
   const groups = useMemo(() => {
     const map = new Map<SearchIndexEntry['type'], SearchIndexEntry[]>();
@@ -120,6 +131,11 @@ export function useGlobalSearch(onAfterSelect?: () => void) {
   const selectEntry = useCallback(
     (entry: SearchIndexEntry) => {
       if (!schema) return;
+      if (isClientOnlySearchPage(entry.viewName)) {
+        navigate(`/${entry.viewName}`);
+        onAfterSelect?.();
+        return;
+      }
       const objectKind = getObjectKind(schema, entry.viewName);
       navigate(getNavigationPath(entry.type, objectKind, entry.section, entry.viewName));
       onAfterSelect?.();

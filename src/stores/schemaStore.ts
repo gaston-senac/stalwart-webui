@@ -158,12 +158,48 @@ function walkLayouts(schema: Schema): { viewToSection: Record<string, string>; l
   return { viewToSection, linkEntries };
 }
 
+/** Extra keywords so Overview / Getting Started / Appearance stay findable. */
+const FORK_VIEW_KEYWORDS: Record<string, string[]> = {
+  [OVERVIEW_VIEW_NAME]: ['overview', 'queue', 'dkim', 'inventory', 'home', 'community'],
+  [ONBOARDING_VIEW_NAME]: ['getting started', 'setup', 'onboarding', 'spf', 'dmarc', 'checklist'],
+  'CustomComponent/Dashboard': ['dashboard', 'metrics', 'charts'],
+  'CustomComponent/LiveDelivery': ['delivery', 'trace', 'troubleshoot', 'smtp'],
+  'CustomComponent/LiveTracing': ['tracing', 'live', 'debug'],
+};
+
+const CLIENT_PAGE_SEARCH_ENTRIES: SearchIndexEntry[] = [
+  {
+    text: 'Appearance',
+    type: 'link',
+    viewName: 'Appearance',
+    section: 'Appearance',
+    breadcrumb: 'Appearance',
+    keywords: ['theme', 'dark', 'light', 'color', 'appearance', 'corners'],
+  },
+  {
+    text: 'Changelog',
+    type: 'link',
+    viewName: 'Changelog',
+    section: 'Changelog',
+    breadcrumb: 'Changelog',
+    keywords: ['changelog', 'release', 'version', "what's new"],
+  },
+];
+
+function withForkKeywords(entries: SearchIndexEntry[]): SearchIndexEntry[] {
+  return entries.map((entry) => {
+    const extra = FORK_VIEW_KEYWORDS[entry.viewName];
+    if (!extra) return entry;
+    return { ...entry, keywords: [...(entry.keywords ?? []), ...extra] };
+  });
+}
+
 function buildSearchIndex(
   schema: Schema,
   viewToSection: Record<string, string>,
   linkEntries: SearchIndexEntry[],
 ): SearchIndexEntry[] {
-  const entries: SearchIndexEntry[] = [...linkEntries];
+  const entries: SearchIndexEntry[] = [...withForkKeywords(linkEntries), ...CLIENT_PAGE_SEARCH_ENTRIES];
 
   function displayNameFor(viewName: string): string {
     const obj = schema.objects[viewName];
