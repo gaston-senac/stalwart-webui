@@ -5,71 +5,164 @@
  */
 
 import React from 'react';
+import {
+  Boxes,
+  CircleOff,
+  Cloud,
+  Database,
+  FileText,
+  Folder,
+  Globe,
+  HardDrive,
+  KeyRound,
+  Network,
+  Radio,
+  Search,
+  Server,
+  Settings2,
+  type LucideIcon,
+} from 'lucide-react';
 
-const BACKEND_ICONS: Record<string, { path: string; isIco?: boolean }> = {
+import { publicAssetUrl } from '@/lib/publicAssetUrl';
+
+/** Brand files under `public/icons/backends/` (filename only — resolved via publicAssetUrl). */
+const BACKEND_ICON_FILES: Record<string, string> = {
   // Storage / database backends
-  foundationdb: { path: '/icons/backends/foundationdb.svg' },
-  mariadb: { path: '/icons/backends/mysql.svg' },
-  mysql: { path: '/icons/backends/mysql.svg' },
-  postgres: { path: '/icons/backends/postgresql.svg' },
-  postgresql: { path: '/icons/backends/postgresql.svg' },
-  quad9: { path: '/icons/backends/quad9.svg' },
-  redis: { path: '/icons/backends/redis.svg' },
-  rediscluster: { path: '/icons/backends/redis.svg' },
-  redissentinel: { path: '/icons/backends/redis.svg' },
-  redisvalkey: { path: '/icons/backends/redis.svg' },
-  rocksdb: { path: '/icons/backends/rocksdb.svg' },
-  sqlite: { path: '/icons/backends/sqlite.svg' },
-  valkey: { path: '/icons/backends/valkey.svg' },
+  foundationdb: 'foundationdb.svg',
+  mariadb: 'mysql.svg',
+  mysql: 'mysql.svg',
+  postgres: 'postgresql.svg',
+  postgresql: 'postgresql.svg',
+  quad9: 'quad9.svg',
+  redis: 'redis.svg',
+  rediscluster: 'redis.svg',
+  redissentinel: 'redis.svg',
+  redisvalkey: 'redis.svg',
+  rocksdb: 'rocksdb.svg',
+  sqlite: 'sqlite.svg',
+  valkey: 'valkey.svg',
+  // S3-compatible stores share the AWS mark (MinIO, Wasabi, DO Spaces, …)
+  s3: 'aws-light.svg',
 
   // Cloud / DNS providers with official icons
-  alibaba: { path: '/icons/backends/alibaba.svg' },
-  alibabacloud: { path: '/icons/backends/alibaba.svg' },
-  alidns: { path: '/icons/backends/alibaba.svg' },
-  amazonwebservices: { path: '/icons/backends/aws-light.svg' },
-  aws: { path: '/icons/backends/aws-light.svg' },
-  lightsail: { path: '/icons/backends/aws-light.svg' },
-  route53: { path: '/icons/backends/aws-light.svg' },
-  azure: { path: '/icons/backends/azure.ico', isIco: true },
-  azuredns: { path: '/icons/backends/azure.ico', isIco: true },
-  baidu: { path: '/icons/backends/baiducloud-color.svg' },
-  baiducloud: { path: '/icons/backends/baiducloud-color.svg' },
-  bunny: { path: '/icons/backends/bunny.svg' },
-  bunnynet: { path: '/icons/backends/bunny.svg' },
-  cloudflare: { path: '/icons/backends/cloudflare.svg' },
-  cpanel: { path: '/icons/backends/cpanel.svg' },
-  digitalocean: { path: '/icons/backends/digital-ocean.svg' },
-  dnsimple: { path: '/icons/backends/dnsimple.svg' },
-  dreamhost: { path: '/icons/backends/dream-host.svg' },
-  duckdns: { path: '/icons/backends/duckdns.svg' },
-  dynu: { path: '/icons/backends/dynu.png' },
-  gandi: { path: '/icons/backends/gandi.svg' },
-  gandiv5: { path: '/icons/backends/gandi.svg' },
-  godaddy: { path: '/icons/backends/godaddy.svg' },
-  google: { path: '/icons/backends/google.svg' },
-  googleclouddns: { path: '/icons/backends/google-cloud.svg' },
-  googlecloud: { path: '/icons/backends/google-cloud.svg' },
-  hetzner: { path: '/icons/backends/hetzner.svg' },
-  hostinger: { path: '/icons/backends/hostinger.svg' },
-  ibm: { path: '/icons/backends/ibm.svg' },
-  ibmcloud: { path: '/icons/backends/ibm.svg' },
-  ionos: { path: '/icons/backends/ionos.svg' },
-  linode: { path: '/icons/backends/linode.svg' },
-  namecheap: { path: '/icons/backends/namecheap.svg' },
-  netlify: { path: '/icons/backends/netlify.svg' },
-  oracle: { path: '/icons/backends/oracle-cloud.svg' },
-  oraclecloud: { path: '/icons/backends/oracle-cloud.svg' },
-  ovh: { path: '/icons/backends/ovh.svg' },
-  plesk: { path: '/icons/backends/plesk.svg' },
-  porkbun: { path: '/icons/backends/porkbun.png' },
-  scaleway: { path: '/icons/backends/scaleway.svg' },
-  tencent: { path: '/icons/backends/tencentcloud-color.svg' },
-  tencentcloud: { path: '/icons/backends/tencentcloud-color.svg' },
-  vercel: { path: '/icons/backends/vercel.svg' },
-  vultr: { path: '/icons/backends/vultr.svg' },
-  yandex: { path: '/icons/backends/yandex.svg' },
-  yandexcloud: { path: '/icons/backends/yandex.svg' },
+  alibaba: 'alibaba.svg',
+  alibabacloud: 'alibaba.svg',
+  alidns: 'alibaba.svg',
+  amazonwebservices: 'aws-light.svg',
+  aws: 'aws-light.svg',
+  lightsail: 'aws-light.svg',
+  route53: 'aws-light.svg',
+  azure: 'azure.ico',
+  azuredns: 'azure.ico',
+  baidu: 'baiducloud-color.svg',
+  baiducloud: 'baiducloud-color.svg',
+  bunny: 'bunny.svg',
+  bunnynet: 'bunny.svg',
+  cloudflare: 'cloudflare.svg',
+  cpanel: 'cpanel.svg',
+  digitalocean: 'digital-ocean.svg',
+  dnsimple: 'dnsimple.svg',
+  dreamhost: 'dream-host.svg',
+  duckdns: 'duckdns.svg',
+  dynu: 'dynu.png',
+  gandi: 'gandi.svg',
+  gandiv5: 'gandi.svg',
+  godaddy: 'godaddy.svg',
+  google: 'google.svg',
+  googleclouddns: 'google-cloud.svg',
+  googlecloud: 'google-cloud.svg',
+  hetzner: 'hetzner.svg',
+  hostinger: 'hostinger.svg',
+  ibm: 'ibm.svg',
+  ibmcloud: 'ibm.svg',
+  ionos: 'ionos.svg',
+  linode: 'linode.svg',
+  namecheap: 'namecheap.svg',
+  netlify: 'netlify.svg',
+  oracle: 'oracle-cloud.svg',
+  oraclecloud: 'oracle-cloud.svg',
+  ovh: 'ovh.svg',
+  plesk: 'plesk.svg',
+  porkbun: 'porkbun.png',
+  scaleway: 'scaleway.svg',
+  tencent: 'tencentcloud-color.svg',
+  tencentcloud: 'tencentcloud-color.svg',
+  vercel: 'vercel.svg',
+  vultr: 'vultr.svg',
+  yandex: 'yandex.svg',
+  yandexcloud: 'yandex.svg',
 };
+
+/** Lucide stand-ins when no brand file exists (stores, directory, search, DNS). */
+const LUCIDE_FALLBACKS: Record<string, LucideIcon> = {
+  // Blob / data / memory / lookup stores
+  filesystem: HardDrive,
+  default: Database,
+  sharded: Boxes,
+  elasticsearch: Search,
+  meilisearch: Search,
+  ldap: Network,
+  sql: Database,
+  oidc: KeyRound,
+  internal: Server,
+  manual: Settings2,
+  automatic: Settings2,
+  system: Server,
+  custom: Settings2,
+  disabled: CircleOff,
+  disable: CircleOff,
+  folder: Folder,
+  file: Folder,
+  http: Cloud,
+  kafka: Radio,
+  nats: Radio,
+  journal: FileText,
+  log: FileText,
+  grpc: Network,
+  // DNS / ACME providers without a local brand asset
+  desec: Globe,
+  spaceship: Globe,
+  arvancloud: Cloud,
+  autodns: Globe,
+  bluecatv2: Globe,
+  cloudns: Globe,
+  constellix: Globe,
+  ddnss: Globe,
+  dnsmadeeasy: Globe,
+  domeneshop: Globe,
+  easydns: Globe,
+  edgedns: Cloud,
+  exoscale: Cloud,
+  freemyip: Globe,
+  gcore: Cloud,
+  glesys: Cloud,
+  hostingde: Globe,
+  huaweicloud: Cloud,
+  hurricane: Globe,
+  infoblox: Globe,
+  infomaniak: Globe,
+  inwx: Globe,
+  ipv64: Globe,
+  joker: Globe,
+  luadns: Globe,
+  mythicbeasts: Globe,
+  namedotcom: Globe,
+  namesilo: Globe,
+  netcup: Globe,
+  nifcloud: Cloud,
+  ns1: Globe,
+  safedns: Globe,
+  transip: Globe,
+  ultradns: Globe,
+  volcengine: Cloud,
+  websupport: Globe,
+  tsig: KeyRound,
+  deprecated1: CircleOff,
+};
+
+export function normalizeBackendKey(backend: string): string {
+  return backend.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
 
 interface BackendIconProps {
   backend: string | null | undefined;
@@ -80,18 +173,25 @@ interface BackendIconProps {
 export function BackendIcon({ backend, className, fallback = null }: BackendIconProps): React.ReactElement | null {
   if (!backend) return null;
 
-  const key = backend.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const icon = BACKEND_ICONS[key] ?? BACKEND_ICONS[backend.toLowerCase()];
-  if (!icon) return fallback as React.ReactElement | null;
+  const key = normalizeBackendKey(backend);
+  const file = BACKEND_ICON_FILES[key] ?? BACKEND_ICON_FILES[backend.toLowerCase()];
+  if (file) {
+    return (
+      <img
+        src={publicAssetUrl(`icons/backends/${file}`)}
+        alt={`${backend} icon`}
+        className={className ?? 'h-4 w-4 object-contain'}
+        loading="lazy"
+      />
+    );
+  }
 
-  return (
-    <img
-      src={icon.path}
-      alt={`${backend} icon`}
-      className={className ?? 'h-4 w-4 object-contain'}
-      loading="lazy"
-    />
-  );
+  const Lucide = LUCIDE_FALLBACKS[key];
+  if (Lucide) {
+    return <Lucide className={className ?? 'h-4 w-4 shrink-0 text-muted-foreground'} aria-hidden />;
+  }
+
+  return fallback as React.ReactElement | null;
 }
 
 interface BackendVariantIconProps {
