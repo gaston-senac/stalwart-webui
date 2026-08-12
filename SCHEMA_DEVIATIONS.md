@@ -81,6 +81,13 @@ itself stays byte-for-byte alignable with upstream's version of the file.
 - **Why**: the `x:Application` list schema is not guaranteed to expose `enabled` as a list column, even though it's a real object property (fetched separately via `properties.push('enabled')`).
 - **Ideal fix**: the server's `x:Application` list schema always includes `enabled` as a real column; the fallback branch is deleted (only the reordering logic remains, which is not a deviation).
 
+### `byte-size-number-format` 🟡
+
+- **Where**: [`src/lib/byteSizeFormat.ts`](src/lib/byteSizeFormat.ts); applied in [`src/components/lists/DynamicList.tsx`](src/components/lists/DynamicList.tsx) (`renderCellValue`) and [`src/components/views/DynamicView.tsx`](src/components/views/DynamicView.tsx) (`ViewValue`)
+- **What**: when a number property is named like a byte quantity (`size`, `maxSize`, `usedDiskQuota`, `maxDiskQuota`) but the schema still advertises `integer` / `unsignedInteger`, display it with the shared dynamic size formatter (B → KB → MB → GB → TB) instead of a bare locale number such as `1,254`.
+- **Why**: most Stalwart byte fields correctly use `format: "size"`, but at least `x:QueuedMessage.size` is still `unsignedInteger` in the live schema, so queue/list Size columns showed unitless counts.
+- **Ideal fix**: the server's field schemas mark every byte quantity as `format: "size"` (including queued-message `size`); `byteSizeFormat.ts` and its call sites are deleted.
+
 ### `bulk-quota-change-action` 🟡
 
 - **Where**: [`src/components/lists/DynamicList.tsx`](src/components/lists/DynamicList.tsx) — `canBulkChangeQuota` and the "Change quota…" `DropdownMenuItem`; [`src/components/lists/PromptSetPropertyDialog.tsx`](src/components/lists/PromptSetPropertyDialog.tsx) (generic client prompt); [`src/components/lists/ChangeQuotaDialog.tsx`](src/components/lists/ChangeQuotaDialog.tsx) (thin quota wrapper)

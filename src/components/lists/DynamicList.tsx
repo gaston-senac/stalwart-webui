@@ -34,6 +34,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatSize as fmtSize, formatDuration as fmtDuration } from '@/lib/durationFormat';
+import { effectiveNumberFormat } from '@/lib/byteSizeFormat';
 import { SizeDisplay } from '@/components/common/SizeDisplay';
 import {
   DropdownMenu,
@@ -449,9 +450,11 @@ function renderCellValue(
       return String(value);
 
     case 'number': {
-      switch (ft.format) {
+      // SCHEMA-DEVIATION: byte-size-number-format (see SCHEMA_DEVIATIONS.md)
+      const numberFormat = effectiveNumberFormat(colName, ft.format);
+      switch (numberFormat) {
         case 'size':
-          return formatSize(value);
+          return typeof value === 'number' ? <SizeDisplay bytes={value} /> : formatSize(value);
         case 'duration':
           return formatDuration(value);
         default:

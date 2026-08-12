@@ -65,6 +65,7 @@ import {
   SIZE_UNITS,
   DURATION_UNITS,
 } from '@/lib/durationFormat';
+import { effectiveNumberFormat } from '@/lib/byteSizeFormat';
 import { resolveSchema, resolveVariantForm, resolveObject, buildEmbeddedDefaults } from '@/lib/schemaResolver';
 import { cn } from '@/lib/utils';
 import { useAccountStore } from '@/stores/accountStore';
@@ -156,7 +157,8 @@ export function FieldWidget(props: FieldWidgetProps) {
       case 'number':
         return (
           <NumberField
-            format={ft.format}
+            // SCHEMA-DEVIATION: byte-size-number-format (see SCHEMA_DEVIATIONS.md)
+            format={effectiveNumberFormat(formField.name, ft.format) as NumberFormat}
             value={value}
             onChange={onChange}
             readOnly={readOnly}

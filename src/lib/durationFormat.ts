@@ -41,7 +41,13 @@ export function humanToBytes(value: number, unit: string): number {
 
 export function formatSize(bytes: number): string {
   const { value, unit } = bytesToHuman(bytes);
-  return `${value} ${unit}`;
+  const sign = value < 0 ? '-' : '';
+  const abs = Math.abs(value);
+  // Locale-aware digits; unit ladder stays data-driven via SIZE_UNITS / bytesToHuman.
+  const formatted = Number.isInteger(abs)
+    ? abs.toLocaleString(undefined, { maximumFractionDigits: 0 })
+    : abs.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return `${sign}${formatted} ${unit}`;
 }
 
 export const DURATION_UNITS = ['ms', 's', 'min', 'h', 'd'] as const;

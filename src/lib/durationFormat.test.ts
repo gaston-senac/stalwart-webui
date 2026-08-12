@@ -103,23 +103,23 @@ describe('humanToBytes', () => {
 
 describe('formatSize', () => {
   it('should format 0 bytes as "0 B"', () => {
-    expect(formatSize(0)).toBe('0 B');
+    expect(formatSize(0)).toMatch(/^0 B$/);
   });
 
   it('should format 1024 bytes as "1 KB"', () => {
-    expect(formatSize(1024)).toBe('1 KB');
+    expect(formatSize(1024)).toMatch(/^1 KB$/);
   });
 
-  it('should format 1572864 bytes as "1.5 MB"', () => {
-    expect(formatSize(1572864)).toBe('1.5 MB');
+  it('should format 1572864 bytes as ~1.5 MB (locale-aware decimal)', () => {
+    expect(formatSize(1572864)).toMatch(/^1([.,]5) MB$/);
   });
 
   it('should format large values in TB', () => {
-    expect(formatSize(1099511627776)).toBe('1 TB');
+    expect(formatSize(1099511627776)).toMatch(/^1 TB$/);
   });
 
   it('should format negative byte counts with a minus sign', () => {
-    expect(formatSize(-9515272)).toBe('-9.07 MB');
+    expect(formatSize(-9515272)).toMatch(/^-9([.,]07) MB$/);
   });
 });
 

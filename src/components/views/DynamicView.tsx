@@ -15,6 +15,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { resolveSchema, resolveVariantForm, resolveForm } from '@/lib/schemaResolver';
 import { useObjectList, useObjectLabel } from '@/lib/objectOptions';
 import { formatDuration } from '@/lib/durationFormat';
+import { effectiveNumberFormat } from '@/lib/byteSizeFormat';
 import { SizeDisplay } from '@/components/common/SizeDisplay';
 import type { Schema, Field, FieldType, FormField, Form, Fields, EnumVariant, ScalarType } from '@/types/schema';
 
@@ -113,7 +114,14 @@ export function DynamicView({ schema, objectName, viewName, data, visibleFields 
           <CardContent className={section.title ? 'pt-0' : ''}>
             <dl className="space-y-2">
               {section.items.map(({ ff, field }) => (
-                <ViewField key={ff.name} label={ff.label} field={field} value={data[ff.name]} schema={schema} />
+                <ViewField
+                  key={ff.name}
+                  name={ff.name}
+                  label={ff.label}
+                  field={field}
+                  value={data[ff.name]}
+                  schema={schema}
+                />
               ))}
             </dl>
           </CardContent>
@@ -123,7 +131,19 @@ export function DynamicView({ schema, objectName, viewName, data, visibleFields 
   );
 }
 
-function ViewField({ label, field, value, schema }: { label: string; field: Field; value: unknown; schema: Schema }) {
+function ViewField({
+  name,
+  label,
+  field,
+  value,
+  schema,
+}: {
+  name: string;
+  label: string;
+  field: Field;
+  value: unknown;
+  schema: Schema;
+}) {
   const isBlock = isBlockType(field.type, value);
 
   return (
@@ -146,7 +166,7 @@ function ViewField({ label, field, value, schema }: { label: string; field: Fiel
         )}
       </dt>
       <dd className="text-sm min-w-0 break-words">
-        <ViewValue type={field.type} value={value} schema={schema} />
+        <ViewValue type={field.type} value={value} schema={schema} propertyName={name} />
       </dd>
     </div>
   );
@@ -162,7 +182,17 @@ function isBlockType(type: FieldType, value: unknown): boolean {
   return false;
 }
 
-function ViewValue({ type, value, schema }: { type: FieldType; value: unknown; schema: Schema }) {
+function ViewValue({
+  type,
+  value,
+  schema,
+  propertyName,
+}: {
+  type: FieldType;
+  value: unknown;
+  schema: Schema;
+  propertyName?: string;
+}) {
   if (value === null || value === undefined) {
     return <span className="italic text-muted-foreground">-</span>;
   }
@@ -172,7 +202,13 @@ function ViewValue({ type, value, schema }: { type: FieldType; value: unknown; s
       return <StringValue value={value} format={type.format} />;
 
     case 'number':
-      return <NumberValue value={value} format={type.format} />;
+      // SCHEMA-DEVIATION: byte-size-number-format (see SCHEMA_DEVIATIONS.md)
+      return (
+        <NumberValue
+          value={value}
+          format={String(effectiveNumberFormat(propertyName ?? '', type.format) ?? type.format)}
+        />
+      );
 
     case 'utcDateTime':
       return <DateTimeValue value={value} />;
@@ -332,7 +368,7 @@ function ObjectValue({
                   {field.description && <FieldTooltip description={field.description} />}
                 </span>
                 <span className="text-sm min-w-0">
-                  <ViewValue type={field.type} value={val} schema={schema} />
+                  <ViewValue type={field.type} value={val} schema={schema} propertyName={key} />
                 </span>
               </div>
             );
