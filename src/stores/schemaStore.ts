@@ -7,6 +7,8 @@
 import { create } from 'zustand';
 import type { Schema, LayoutSubItem, LayoutItem } from '@/types/schema';
 
+import { ONBOARDING_VIEW_NAME } from '@/features/onboarding/checklist';
+
 // SCHEMA-DEVIATION: onboarding-checklist-nav-entry (see SCHEMA_DEVIATIONS.md)
 //
 // The sidebar is entirely server-driven (schema.layouts) — there's no
@@ -19,12 +21,12 @@ function withOnboardingNavEntry(schema: Schema): Schema {
   if (!first) return schema;
 
   const alreadyPresent = first.items.some(
-    (item) => 'link' in item && item.link.viewName === 'CustomComponent/Onboarding',
+    (item) => 'link' in item && item.link.viewName === ONBOARDING_VIEW_NAME,
   );
   if (alreadyPresent) return schema;
 
   const onboardingLink: LayoutItem = {
-    link: { name: 'Getting Started', icon: 'rocket', viewName: 'CustomComponent/Onboarding' },
+    link: { name: 'Getting Started', icon: 'rocket', viewName: ONBOARDING_VIEW_NAME },
   };
   const dashboardIdx = first.items.findIndex(
     (item) => 'link' in item && item.link.viewName === 'CustomComponent/Dashboard',
@@ -36,6 +38,21 @@ function withOnboardingNavEntry(schema: Schema): Schema {
     ...schema,
     layouts: [{ ...first, items }, ...schema.layouts.slice(1)],
   };
+}
+
+function withoutOnboardingNavEntry(schema: Schema): Schema {
+  let changed = false;
+  const layouts = schema.layouts.map((layout) => {
+    const items = layout.items.filter(
+      (item) => !('link' in item && item.link.viewName === ONBOARDING_VIEW_NAME),
+    );
+    if (items.length !== layout.items.length) {
+      changed = true;
+      return { ...layout, items };
+    }
+    return layout;
+  });
+  return changed ? { ...schema, layouts } : schema;
 }
 
 export interface SearchIndexEntry {
@@ -56,6 +73,8 @@ interface SchemaState {
   searchIndex: SearchIndexEntry[];
 
   setSchema: (schema: Schema) => void;
+  /** SCHEMA-DEVIATION: onboarding-checklist-nav-entry — drop Getting Started once complete. */
+  hideOnboardingNav: () => void;
 }
 
 function walkLayouts(schema: Schema): { viewToSection: Record<string, string>; linkEntries: SearchIndexEntry[] } {
@@ -203,6 +222,17 @@ export const useSchemaStore = create<SchemaState>()((set) => ({
       isLoaded: true,
       viewToSection,
       searchIndex,
+    });
+  },
+
+  hideOnboardingNav: () => {
+    set((state) => {
+      if (!state.schema) return state;
+      const schema = withoutOnboardingNavEntry(state.schema);
+      if (schema === state.schema) return state;
+      const { viewToSection, linkEntries } = walkLayouts(schema);
+      const searchIndex = buildSearchIndex(schema, viewToSection, linkEntries);
+      return { schema, viewToSection, searchIndex };
     });
   },
 }));

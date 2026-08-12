@@ -11,109 +11,8 @@ import { CircleCheck, CircleAlert, HelpCircle, Loader2, Rocket } from 'lucide-re
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { jmapQueryAllAndGet, getAccountId } from '@/services/jmap/client';
 import { useAccountStore } from '@/stores/accountStore';
-
-type CheckStatus = 'loading' | 'done' | 'pending' | 'unknown';
-
-interface ChecklistItemDef {
-  id: string;
-  permissionPrefix: string;
-  titleKey: [string, string];
-  descriptionKey: [string, string];
-  actionLabelKey: [string, string];
-  actionHref: string;
-  check: () => Promise<boolean>;
-}
-
-async function hasEnabledDomain(): Promise<boolean> {
-  const accountId = getAccountId('x:Domain');
-  const { list } = await jmapQueryAllAndGet('x:Domain', accountId, {}, ['isEnabled']);
-  return list.some((d) => d.isEnabled === true);
-}
-
-async function hasDkimSignature(): Promise<boolean> {
-  const accountId = getAccountId('x:DkimSignature');
-  const { ids } = await jmapQueryAllAndGet('x:DkimSignature', accountId, {}, []);
-  return ids.length > 0;
-}
-
-async function hasValidCertificate(): Promise<boolean> {
-  const accountId = getAccountId('x:Certificate');
-  const { list } = await jmapQueryAllAndGet('x:Certificate', accountId, {}, ['notValidAfter']);
-  const now = Date.now();
-  return list.some((c) => {
-    const notValidAfter = c.notValidAfter;
-    if (typeof notValidAfter !== 'string') return false;
-    const expiry = Date.parse(notValidAfter);
-    return Number.isFinite(expiry) && expiry > now;
-  });
-}
-
-async function hasAdminAccount(): Promise<boolean> {
-  const accountId = getAccountId('x:Account');
-  const { list } = await jmapQueryAllAndGet('x:Account', accountId, { filter: { '@type': 'User' } }, ['roles']);
-  return list.some((a) => {
-    const roles = a.roles as Record<string, unknown> | undefined;
-    return roles?.['@type'] === 'Admin';
-  });
-}
-
-// SCHEMA-DEVIATION: onboarding-checklist-nav-entry (see SCHEMA_DEVIATIONS.md)
-// Each item checks a real, already-editable property (domain enabled state,
-// DKIM signature presence, certificate expiry, an account with the Admin
-// role) — nothing here is fabricated data, only the checklist framing itself
-// is new.
-const ITEMS: ChecklistItemDef[] = [
-  {
-    id: 'domain',
-    permissionPrefix: 'sysDomain',
-    titleKey: ['onboarding.domain.title', 'Configure a domain'],
-    descriptionKey: [
-      'onboarding.domain.description',
-      'At least one domain must be added and enabled before this server can handle mail for it.',
-    ],
-    actionLabelKey: ['onboarding.domain.action', 'Go to Domains'],
-    actionHref: '/Management/x:Domain',
-    check: hasEnabledDomain,
-  },
-  {
-    id: 'dkim',
-    permissionPrefix: 'sysDkimSignature',
-    titleKey: ['onboarding.dkim.title', 'Set up DKIM signing'],
-    descriptionKey: [
-      'onboarding.dkim.description',
-      'A DKIM signature lets receiving servers verify mail actually came from your domain.',
-    ],
-    actionLabelKey: ['onboarding.dkim.action', 'Go to DKIM Signatures'],
-    actionHref: '/Management/x:DkimSignature',
-    check: hasDkimSignature,
-  },
-  {
-    id: 'certificate',
-    permissionPrefix: 'sysCertificate',
-    titleKey: ['onboarding.certificate.title', 'Install a valid TLS certificate'],
-    descriptionKey: [
-      'onboarding.certificate.description',
-      'Required for encrypted SMTP/IMAP/HTTPS connections. Checked for at least one certificate that has not expired.',
-    ],
-    actionLabelKey: ['onboarding.certificate.action', 'Go to TLS Certificates'],
-    actionHref: '/Settings/x:Certificate',
-    check: hasValidCertificate,
-  },
-  {
-    id: 'admin',
-    permissionPrefix: 'sysAccount',
-    titleKey: ['onboarding.admin.title', 'Create an administrator account'],
-    descriptionKey: [
-      'onboarding.admin.description',
-      'A named admin account, separate from the break-glass recovery admin, should be used for day-to-day management.',
-    ],
-    actionLabelKey: ['onboarding.admin.action', 'Go to Accounts'],
-    actionHref: '/Management/x:Account/User',
-    check: hasAdminAccount,
-  },
-];
+import { ONBOARDING_ITEMS, type CheckStatus } from '@/features/onboarding/checklist';
 
 function StatusIcon({ status }: { status: CheckStatus }) {
   switch (status) {
@@ -136,14 +35,17 @@ export function OnboardingChecklistPage() {
   // from within the effect body.
   const [statuses, setStatuses] = useState<Record<string, CheckStatus>>(() =>
     Object.fromEntries(
-      ITEMS.map((item) => [item.id, hasObjectPermission(item.permissionPrefix, 'Query') ? 'loading' : 'unknown']),
+      ONBOARDING_ITEMS.map((item) => [
+        item.id,
+        hasObjectPermission(item.permissionPrefix, 'Query') ? 'loading' : 'unknown',
+      ]),
     ),
   );
 
   useEffect(() => {
     let cancelled = false;
 
-    for (const item of ITEMS) {
+    for (const item of ONBOARDING_ITEMS) {
       if (!hasObjectPermission(item.permissionPrefix, 'Query')) continue;
       item
         .check()
@@ -160,7 +62,7 @@ export function OnboardingChecklistPage() {
     };
   }, [hasObjectPermission]);
 
-  const doneCount = ITEMS.filter((item) => statuses[item.id] === 'done').length;
+  const doneCount = ONBOARDING_ITEMS.filter((item) => statuses[item.id] === 'done').length;
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 pt-8">
@@ -171,14 +73,14 @@ export function OnboardingChecklistPage() {
           <p className="text-sm text-muted-foreground">
             {t('onboarding.subtitle', 'A quick checklist for a new Stalwart install. {{done}} of {{total}} done.', {
               done: doneCount,
-              total: ITEMS.length,
+              total: ONBOARDING_ITEMS.length,
             })}
           </p>
         </div>
       </div>
 
       <div className="space-y-3">
-        {ITEMS.map((item) => {
+        {ONBOARDING_ITEMS.map((item) => {
           const status = statuses[item.id] ?? 'loading';
           return (
             <Card key={item.id}>

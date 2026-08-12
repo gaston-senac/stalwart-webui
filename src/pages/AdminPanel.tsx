@@ -29,6 +29,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { friendlyName } from '@/hooks/useGlobalSearch';
 import { AppearancePage } from '@/features/appearance/AppearancePage';
 import { ChangelogPage } from '@/features/changelog/ChangelogPage';
+import { OnboardingNavGate } from '@/features/onboarding/OnboardingNavGate';
 import {
   findFirstAccessibleLinkInLayout,
   findFirstVisibleLinkInLayout,
@@ -326,6 +327,7 @@ export default function AdminPanel() {
   // the shared ScrollArea instead of scrolling the whole window.
   return (
     <div className="flex h-screen flex-col">
+      <OnboardingNavGate />
       <TopBar />
       <div className="flex min-h-0 min-w-0 flex-1">
         <Sidebar />
