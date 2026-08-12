@@ -167,7 +167,8 @@
     "trialDescription": "Get access to advanced features including multi-tenancy, AI-powered spam filtering, alerts, and more.",
     "trialButton": "Start 30-Day Free Trial",
     "requestTrial": "Request a free trial to unlock this feature.",
-    "ossHidden": "This feature is not available in the open-source edition."
+    "ossHidden": "This feature is not available in the open-source edition.",
+    "openOverview": "Open Overview"
   },
   "errorBoundary": {
     "title": "Something went wrong",

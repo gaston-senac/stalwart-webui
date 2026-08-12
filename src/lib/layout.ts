@@ -188,6 +188,51 @@ export function findFirstAccessibleLinkInLayout(
   return null;
 }
 
+function layoutHasLink(layout: Layout, viewName: string): boolean {
+  for (const item of layout.items) {
+    if ('link' in item && item.link.viewName === viewName) return true;
+    if ('container' in item) {
+      const stack = [...item.container.items];
+      while (stack.length > 0) {
+        const sub = stack.pop()!;
+        if (sub.type === 'link' && sub.viewName === viewName) return true;
+        if (sub.type === 'container') stack.push(...sub.items);
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Prefer Overview as the home page when the Enterprise Dashboard is not
+ * accessible (Community lock / OSS hide / missing liveMetrics). Otherwise
+ * returns the first accessible link in the layout.
+ */
+export function findPreferredDefaultLinkInLayout(
+  schema: Schema,
+  layout: Layout,
+  edition: string,
+  canGet: CanGet,
+  hasPerm?: HasPermission,
+  overviewViewName = 'CustomComponent/Overview',
+): string | null {
+  const dashboardAccessible = isLinkAccessible(
+    schema,
+    'CustomComponent/Dashboard',
+    edition,
+    canGet,
+    hasPerm,
+  );
+  if (
+    !dashboardAccessible &&
+    layoutHasLink(layout, overviewViewName) &&
+    isLinkAccessible(schema, overviewViewName, edition, canGet, hasPerm)
+  ) {
+    return overviewViewName;
+  }
+  return findFirstAccessibleLinkInLayout(schema, layout, edition, canGet, hasPerm);
+}
+
 export function visibleLayouts(schema: Schema, edition: string, canGet: CanGet, hasPerm?: HasPermission): Layout[] {
   return schema.layouts.filter(
     (layout) => findFirstVisibleLinkInLayout(schema, layout, edition, canGet, hasPerm) !== null,

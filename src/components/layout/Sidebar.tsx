@@ -25,6 +25,7 @@ import {
   isLinkVisible,
 } from '@/lib/layout';
 import { findLastVisitedLinkInLayout, setLastVisitedSection } from '@/lib/lastVisited';
+import { OVERVIEW_VIEW_NAME } from '@/features/overview/constants';
 import type { Layout, LayoutItem, LayoutSubItem } from '@/types/schema';
 
 function LucideIcon({ name, className }: { name: string; className?: string }) {
@@ -358,6 +359,7 @@ export function Sidebar() {
   const sidebarOpen = useUIStore((s) => s.sidebarOpen);
   const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
   const schema = useSchemaStore((s) => s.schema);
+  const viewToSection = useSchemaStore((s) => s.viewToSection);
   const edition = useAccountStore((s) => s.edition);
   const permissions = useAccountStore((s) => s.permissions);
   const hasPermission = useAccountStore((s) => s.hasPermission);
@@ -500,7 +502,15 @@ export function Sidebar() {
           </TooltipProvider>
         )}
 
-        <EnterpriseUpsell open={upsellOpen} onClose={() => setUpsellOpen(false)} />
+        <EnterpriseUpsell
+          open={upsellOpen}
+          onClose={() => setUpsellOpen(false)}
+          overviewHref={
+            viewToSection[OVERVIEW_VIEW_NAME]
+              ? `/${viewToSection[OVERVIEW_VIEW_NAME]}/${OVERVIEW_VIEW_NAME}`
+              : null
+          }
+        />
       </aside>
     </>
   );

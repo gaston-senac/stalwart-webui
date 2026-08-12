@@ -33,9 +33,11 @@ import { OnboardingNavGate } from '@/features/onboarding/OnboardingNavGate';
 import {
   findFirstAccessibleLinkInLayout,
   findFirstVisibleLinkInLayout,
+  findPreferredDefaultLinkInLayout,
   isLinkAccessible,
   visibleLayouts,
 } from '@/lib/layout';
+import { OVERVIEW_VIEW_NAME } from '@/features/overview/constants';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Loader2 } from 'lucide-react';
 
@@ -203,7 +205,14 @@ export default function AdminPanel() {
     const layouts = visibleLayouts(schema, edition, canGet, hasPerm);
     const pickDefault = (): { layoutName: string; link: string | null } | null => {
       for (const layout of layouts) {
-        const link = findFirstAccessibleLinkInLayout(schema, layout, edition, canGet, hasPerm);
+        const link = findPreferredDefaultLinkInLayout(
+          schema,
+          layout,
+          edition,
+          canGet,
+          hasPerm,
+          OVERVIEW_VIEW_NAME,
+        );
         if (link) return { layoutName: layout.name, link };
       }
       if (layouts[0]) {
