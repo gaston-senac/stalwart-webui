@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-08-25
+
 ### Changed
 - Merged `stalwartlabs/webui` through `af11f51` (`v1.0.9`): OAuth client IDs can now be configured by the server, and the UI restores the last visited page per section.
 
