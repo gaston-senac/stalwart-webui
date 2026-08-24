@@ -12,16 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
 .ignore
 scripts/*
 !scripts/dev-token.ps1
@@ -49,3 +39,11 @@ outputs/
 *.py
 webui.zip
 release_body.md
+.*
+!.gitignore
+!.prettierrc
+!.env.development
+!.github/
+!.vscode/
+.vscode/*
+!.vscode/extensions.json
