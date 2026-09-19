@@ -1337,9 +1337,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
     if (!previousItems) return;
     setPageHistory(previousPages);
     setItems(previousItems);
-    setCurrentAnchor(
-      newStack.length === 0 ? null : (previousItems[previousItems.length - 1]?.id as string),
-    );
+setCurrentAnchor((previousItems[0]?.id as string) ?? null);
     setSelectedIds(new Set());
   }, [anchorStack, clientAllItems, clientPage, fetchData, pageHistory]);
 
