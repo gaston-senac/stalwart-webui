@@ -31,10 +31,11 @@ describe('logFilterPresets', () => {
   });
 
   it('persists noise visibility with a preset', () => {
-    saveLogFilterPreset('Quiet', {}, { hideMetrics: false, hideTasks: true });
+    saveLogFilterPreset('Quiet', {}, { hideMetrics: false, hideTasks: true, hideBlobStorePurge: true });
     expect(listLogFilterPresets()[0].noiseFilters).toEqual({
       hideMetrics: false,
       hideTasks: true,
+      hideBlobStorePurge: true,
     });
   });
 });

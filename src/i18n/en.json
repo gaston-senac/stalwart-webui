@@ -350,6 +350,7 @@
     "autoRefresh": "Auto-refresh",
     "hideMetrics": "Hide metrics events",
     "hideTasks": "Hide task events",
+    "hideBlobStorePurge": "Hide \"Blob store purge completed\"",
     "hideMetricsCollected": "Hide \"Metrics collected\"",
     "hideTaskScheduled": "Hide \"Task scheduled for future execution\"",
     "filterPresets": "Presets",

@@ -23,6 +23,10 @@ const METRIC_EVENTS = [
   'metricsPushed',
 ];
 
+const BLOB_STORE_PURGE_EVENTS = [
+  'store.blob-store-purged',
+];
+
 const TASK_EVENT_SUFFIXES = [
   'task-acquired',
   'task-queued',
@@ -45,6 +49,7 @@ const TASK_EVENTS = [
 export const LOG_NOISE_FILTERS = [
   { key: 'hideMetrics', label: 'Metrics', eventNames: METRIC_EVENTS },
   { key: 'hideTasks', label: 'Tasks', eventNames: TASK_EVENTS },
+  { key: 'hideBlobStorePurge', label: 'Blob store purge', eventNames: BLOB_STORE_PURGE_EVENTS },
 ] as const satisfies readonly LogNoiseGroup[];
 
 export type LogNoiseFilterKey = (typeof LOG_NOISE_FILTERS)[number]['key'];
@@ -52,10 +57,15 @@ export type LogNoiseFilterState = Record<LogNoiseFilterKey, boolean>;
 
 export function readLogNoiseFilters(search: string): LogNoiseFilterState {
   const params = new URLSearchParams(search);
+  const legacyKeys: Partial<Record<LogNoiseFilterKey, string>> = {
+    hideMetrics: 'hideMetricsCollected',
+    hideTasks: 'hideTaskScheduled',
+  };
   return Object.fromEntries(
     LOG_NOISE_FILTERS.map(({ key }) => {
-      const legacyKey = key === 'hideMetrics' ? 'hideMetricsCollected' : 'hideTaskScheduled';
-      const value = params.get(`log.${key}`) ?? params.get(`log.${legacyKey}`);
+      const value = params.get(`log.${key}`) ?? (
+        legacyKeys[key] ? params.get(`log.${legacyKeys[key]}`) : null
+      );
       return [key, value !== '0'];
     }),
   ) as LogNoiseFilterState;
