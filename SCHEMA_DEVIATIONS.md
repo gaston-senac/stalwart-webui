@@ -42,7 +42,7 @@ itself stays byte-for-byte alignable with upstream's version of the file.
 ### `log-client-filters` 🟡
 
 - **Where**: [`src/lib/logFilters.ts`](src/lib/logFilters.ts), type augmentation in [`src/lib/schemaDeviationTypes.ts`](src/lib/schemaDeviationTypes.ts)
-- **What**: injects `level` and `event` as filterable columns on the `x:Log` list, applied entirely client-side (`clientOnly` flag consumed by `DynamicList`). The `clientOnly` flag is declared as `ClientOnlyFilterEnum` (an intersection type), not on the official `FilterEnum` in `schema.ts`.
+- **What**: injects `level` and `event` as filterable columns on the `x:Log` list, and provides URL-persisted, client-side noise exclusions for schema-advertised telemetry metric events and routine task-manager/task-queue events. Task failures and retries remain visible. The `clientOnly` flag is declared as `ClientOnlyFilterEnum` (an intersection type), not on the official `FilterEnum` in `schema.ts`.
 - **Why**: Stalwart's JMAP `x:Log/query` returns `unsupportedFilter` for both properties today, even though they're returned per row.
 - **Ideal fix**: `stalwartlabs/stalwart` accepts `level`/`event` as real query filters; the schema then advertises them normally and `logFilters.ts` + the `ClientOnlyFilterEnum` augmentation are deleted.
 

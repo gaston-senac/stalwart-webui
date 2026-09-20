@@ -92,6 +92,12 @@ import { isClientOnlyFilterEnum, isClientSortableColumn } from '@/lib/schemaDevi
 // SCHEMA-DEVIATION: report-summary-columns (see SCHEMA_DEVIATIONS.md)
 import { getBasePath } from '@/lib/basePath';
 import {
+  filterLogNoise,
+  LOG_NOISE_FILTERS,
+  readLogNoiseFilters,
+  type LogNoiseFilterState,
+} from '@/lib/logFilters';
+import {
   getReportSummaryValue,
   isReportSummaryColumn,
   listNeedsReportProperty,
@@ -755,6 +761,9 @@ export function DynamicList({ viewName }: DynamicListProps) {
   const [refreshOnCooldown, setRefreshOnCooldown] = useState(false);
   const refreshCooldownTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [logAutoRefresh, setLogAutoRefresh] = useState(false);
+  const [logNoiseFilters, setLogNoiseFilters] = useState<LogNoiseFilterState>(() =>
+    readLogNoiseFilters(window.location.search),
+  );
   const [logPresets, setLogPresets] = useState<LogFilterPreset[]>(() =>
     typeof localStorage !== 'undefined' ? listLogFilterPresets() : [],
   );
@@ -827,6 +836,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
     setAppliedFilters(initialFilters);
     setFiltersOpen(Object.keys(initialFilters).length > 0);
     setSort(readUrlSort());
+    setLogNoiseFilters(readLogNoiseFilters(window.location.search));
   });
 
   const buildFilter = useCallback((): Record<string, unknown> => {
@@ -913,7 +923,14 @@ export function DynamicList({ viewName }: DynamicListProps) {
         const filter = buildFilter();
         const sortArr = buildSort();
 
-        if (activeClientFilters.length > 0 || isMailboxList || clientSortField || (problemsOnly && needsReportProperty)) {
+        const hasActiveLogNoiseFilters = isLogEntries && Object.values(logNoiseFilters).some(Boolean);
+        if (
+          activeClientFilters.length > 0 ||
+          hasActiveLogNoiseFilters ||
+          isMailboxList ||
+          clientSortField ||
+          (problemsOnly && needsReportProperty)
+        ) {
           // No server-side pagination possible once a client-only filter is
           // active (SCHEMA-DEVIATION: log-client-filters): fetch every
           // server-matching row up front, narrow it in the browser, then
@@ -964,6 +981,9 @@ export function DynamicList({ viewName }: DynamicListProps) {
           let matched = fullList.filter((item) =>
             activeClientFilters.every((f) => String(item[f.field] ?? '') === f.value),
           );
+          if (isLogEntries) {
+            matched = filterLogNoise(matched, schema, logNoiseFilters);
+          }
           if (problemsOnly && needsReportProperty) {
             matched = matched.filter((item) => reportHasProblems(viewName, item));
           }
@@ -1047,6 +1067,8 @@ export function DynamicList({ viewName }: DynamicListProps) {
       clientSortField,
       sort,
       activeClientFilters,
+      isLogEntries,
+      logNoiseFilters,
       problemsOnly,
       needsReportProperty,
       viewName,
@@ -1109,7 +1131,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
           exportQuery,
           properties,
         );
-        rowsSource = fetched;
+        rowsSource = isLogEntries ? filterLogNoise(fetched, schema, logNoiseFilters) : fetched;
       }
 
       const formatColumn = (colName: string, item: Record<string, unknown>): string => {
@@ -1173,6 +1195,8 @@ export function DynamicList({ viewName }: DynamicListProps) {
     viewName,
     t,
     getDisplayName,
+    isLogEntries,
+    logNoiseFilters,
   ]);
 
   useEffect(() => {
@@ -1183,7 +1207,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
     setCurrentAnchor(null);
     fetchData(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewName, sort, resolved?.list, appliedFilters, activeAccountId, problemsOnly]);
+  }, [viewName, sort, resolved?.list, appliedFilters, activeAccountId, problemsOnly, logNoiseFilters]);
 
   useEffect(() => {
     if (!schema || !resolved?.list || items.length === 0) return;
@@ -1246,7 +1270,10 @@ export function DynamicList({ viewName }: DynamicListProps) {
   const resetFilters = useCallback(() => {
     setFilterValues({});
     setAppliedFilters({});
-  }, []);
+    if (isLogEntries) {
+      setLogNoiseFilters(readLogNoiseFilters(''));
+    }
+  }, [isLogEntries]);
 
   const handleRefresh = useCallback(() => {
     if (refreshOnCooldown) return;
@@ -1283,9 +1310,14 @@ export function DynamicList({ viewName }: DynamicListProps) {
     if (problemsOnly && needsReportProperty) {
       params.set('problemsOnly', '1');
     }
+    if (isLogEntries) {
+      for (const { key } of LOG_NOISE_FILTERS) {
+        params.set(`log.${key}`, logNoiseFilters[key] ? '1' : '0');
+      }
+    }
     setSearchParams(params, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterValues, sort, appliedFilters, problemsOnly, needsReportProperty]);
+  }, [filterValues, sort, appliedFilters, problemsOnly, needsReportProperty, isLogEntries, logNoiseFilters]);
 
   const handleNextPage = useCallback(() => {
     if (clientAllItems !== null) {
@@ -1588,6 +1620,7 @@ setCurrentAnchor((previousItems[0]?.id as string) ?? null);
 
   const filtersActive =
     problemsOnly ||
+    (isLogEntries && Object.values(logNoiseFilters).some(Boolean)) ||
     Object.entries(appliedFilters).some(([key, val]) => !key.endsWith('Op') && val.trim() !== '');
 
   const queueOpsLinks = useMemo(() => {
@@ -2041,6 +2074,20 @@ setCurrentAnchor((previousItems[0]?.id as string) ?? null);
             </CollapsibleTrigger>
             {isLogEntries && (
               <div className="flex flex-wrap items-center gap-3">
+                {LOG_NOISE_FILTERS.map(({ key, label }) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <Switch
+                      id={`log-${key}`}
+                      checked={logNoiseFilters[key]}
+                      onCheckedChange={(checked) => {
+                        setLogNoiseFilters((previous) => ({ ...previous, [key]: checked }));
+                      }}
+                    />
+                    <Label htmlFor={`log-${key}`} className="text-sm font-normal">
+                      {t(`list.${key}`, `Hide "${label}"`)}
+                    </Label>
+                  </div>
+                ))}
                 <div className="flex items-center gap-2">
                   <Switch
                     id="log-auto-refresh"
@@ -2099,6 +2146,9 @@ setCurrentAnchor((previousItems[0]?.id as string) ?? null);
                               onSelect={() => {
                                 setFilterValues(preset.filters);
                                 setAppliedFilters(preset.filters);
+                                if (preset.noiseFilters) {
+                                  setLogNoiseFilters((current) => ({ ...current, ...preset.noiseFilters }));
+                                }
                                 setFiltersOpen(true);
                               }}
                             >
@@ -2125,13 +2175,13 @@ setCurrentAnchor((previousItems[0]?.id as string) ?? null);
                       type="button"
                       variant="ghost"
                       size="sm"
-                      disabled={loading || Object.keys(appliedFilters).length === 0}
+                      disabled={loading || (Object.keys(appliedFilters).length === 0 && !isLogEntries)}
                       onClick={() => {
                         const name = window.prompt(
                           t('list.filterPresetNamePrompt', 'Name for this filter preset'),
                         );
                         if (!name?.trim()) return;
-                        saveLogFilterPreset(name, appliedFilters);
+                        saveLogFilterPreset(name, appliedFilters, logNoiseFilters);
                         setLogPresets(listLogFilterPresets());
                       }}
                     >

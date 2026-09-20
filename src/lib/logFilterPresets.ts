@@ -4,12 +4,15 @@
  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-SEL
  */
 
+import type { LogNoiseFilterState } from './logFilters';
+
 const STORAGE_KEY = 'stalwart-log-filter-presets';
 
 export interface LogFilterPreset {
   id: string;
   name: string;
   filters: Record<string, string>;
+  noiseFilters?: Partial<LogNoiseFilterState>;
 }
 
 function readAll(): LogFilterPreset[] {
@@ -44,7 +47,11 @@ export function listLogFilterPresets(): LogFilterPreset[] {
   return readAll();
 }
 
-export function saveLogFilterPreset(name: string, filters: Record<string, string>): LogFilterPreset {
+export function saveLogFilterPreset(
+  name: string,
+  filters: Record<string, string>,
+  noiseFilters?: LogNoiseFilterState,
+): LogFilterPreset {
   const trimmed = name.trim();
   const cleanFilters = Object.fromEntries(
     Object.entries(filters).filter(([, v]) => v !== '' && v != null),
@@ -54,6 +61,7 @@ export function saveLogFilterPreset(name: string, filters: Record<string, string
     id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
     name: trimmed,
     filters: cleanFilters,
+    ...(noiseFilters ? { noiseFilters } : {}),
   };
   writeAll([preset, ...presets].slice(0, 20));
   return preset;
