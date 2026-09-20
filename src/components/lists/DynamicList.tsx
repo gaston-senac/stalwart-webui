@@ -2064,37 +2064,44 @@ setCurrentAnchor((previousItems[0]?.id as string) ?? null);
 
       {list.filters && list.filters.length > 0 && (
         <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-          <div className="flex items-center justify-between">
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <Filter className="h-4 w-4" />
-                {t('list.filters', 'Filters')}
-                {filtersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </Button>
-            </CollapsibleTrigger>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <Filter className="h-4 w-4" />
+                  {t('list.filters', 'Filters')}
+                  {filtersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
+              </CollapsibleTrigger>
+              {isLogEntries && (
+                <div className="flex flex-wrap items-center gap-3 border border-[#26262F] bg-[#0A0A0B] px-[10px] py-[6px] text-white">
+                  <span className="text-[12px] font-medium">{t('list.hide', 'Hide:')}</span>
+                  {LOG_NOISE_FILTERS.map(({ key, label }) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <Switch
+                        id={`log-${key}`}
+                        checked={logNoiseFilters[key]}
+                        onCheckedChange={(checked) => {
+                          setLogNoiseFilters((previous) => ({ ...previous, [key]: checked }));
+                        }}
+                      />
+                      <Label htmlFor={`log-${key}`} className="text-[12px] font-normal text-white">
+                        {t(`list.${key}`, `Hide "${label}"`)}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             {isLogEntries && (
               <div className="flex flex-wrap items-center gap-3">
-                {LOG_NOISE_FILTERS.map(({ key, label }) => (
-                  <div key={key} className="flex items-center gap-2">
-                    <Switch
-                      id={`log-${key}`}
-                      checked={logNoiseFilters[key]}
-                      onCheckedChange={(checked) => {
-                        setLogNoiseFilters((previous) => ({ ...previous, [key]: checked }));
-                      }}
-                    />
-                    <Label htmlFor={`log-${key}`} className="text-sm font-normal">
-                      {t(`list.${key}`, `Hide "${label}"`)}
-                    </Label>
-                  </div>
-                ))}
                 <div className="flex items-center gap-2">
                   <Switch
                     id="log-auto-refresh"
                     checked={logAutoRefresh}
                     onCheckedChange={setLogAutoRefresh}
                   />
-                  <Label htmlFor="log-auto-refresh" className="text-sm font-normal">
+                  <Label htmlFor="log-auto-refresh" className="text-[12px] font-normal">
                     {t('list.autoRefresh', 'Auto-refresh')}
                   </Label>
                 </div>
