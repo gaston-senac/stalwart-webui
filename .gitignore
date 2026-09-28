@@ -46,4 +46,6 @@ release_body.md
 !.github/
 !.vscode/
 .vscode/*
+bun.lock
 !.vscode/extensions.json
+.clinerules

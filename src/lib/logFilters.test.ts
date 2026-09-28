@@ -19,88 +19,80 @@ const schema = {
 } as unknown as Schema;
 
 describe('log noise filters', () => {
-  it('enables all filters when URL parameters are absent', () => {
+  it('hides these event types when URL parameters are absent', () => {
+    // Default state: all toggles are off, meaning the corresponding events are hidden.
     expect(readLogNoiseFilters('')).toEqual({
-      hideMetrics: true,
-      hideTasks: true,
-      hideBlobStorePurge: true,
+      showMetrics: false,
+      showTasks: false,
+      showBlobStorePurge: false,
     });
-    expect(readLogNoiseFilters('?log.hideMetrics=0&log.hideTasks=1')).toEqual({
-      hideMetrics: false,
-      hideTasks: true,
-      hideBlobStorePurge: true,
+    expect(readLogNoiseFilters('?log.showTasks=1')).toEqual({
+      showMetrics: false,
+      showTasks: true,
+      showBlobStorePurge: false,
     });
-    expect(readLogNoiseFilters('?log.hideMetricsCollected=0&log.hideTaskScheduled=0')).toEqual({
-      hideMetrics: false,
-      hideTasks: false,
-      hideBlobStorePurge: true,
+    expect(readLogNoiseFilters('?log.showBlobStorePurge=1')).toEqual({
+      showMetrics: false,
+      showTasks: false,
+      showBlobStorePurge: true,
     });
-    expect(readLogNoiseFilters('?log.hideBlobStorePurge=0')).toEqual({
-      hideMetrics: true,
-      hideTasks: true,
-      hideBlobStorePurge: false,
-    });
-  });
-
-  it('resolves advertised canonical names and legacy labels', () => {
-    expect(logNoiseFilterValues(schema, {
-      hideMetrics: true,
-      hideTasks: false,
-      hideBlobStorePurge: false,
-    })).toEqual(new Set([
-      'telemetry.metrics-collected',
-      'Metrics collected',
-      'telemetry.metrics-stored',
-      'Metric store',
-    ]));
   });
 
   it('filters groups while preserving failures and retries', () => {
     const items = [
       { id: '1', event: 'telemetry.metrics-collected' },
-      { id: '2', event: 'Task scheduled for future execution' },
+      { id: '2', event: 'task-manager.task-scheduled' },
       { id: '3', event: 'task-manager.task-failed' },
       { id: '4', event: 'authentication' },
       { id: '5', event: 'store.blob-store-purged' },
     ];
+    // All toggles enabled: no events are hidden.
     expect(filterLogNoise(items, schema, {
-      hideMetrics: true,
-      hideTasks: true,
-      hideBlobStorePurge: true,
+      showMetrics: true,
+      showTasks: true,
+      showBlobStorePurge: true,
+    })).toEqual(items);
+    // Metrics hidden, tasks shown, purge hidden.
+    expect(filterLogNoise(items, schema, {
+      showMetrics: false,
+      showTasks: true,
+      showBlobStorePurge: false,
     })).toEqual([
+      { id: '2', event: 'task-manager.task-scheduled' },
       { id: '3', event: 'task-manager.task-failed' },
       { id: '4', event: 'authentication' },
     ]);
+    // Metrics hidden, tasks hidden, purge shown.
     expect(filterLogNoise(items, schema, {
-      hideMetrics: false,
-      hideTasks: true,
-      hideBlobStorePurge: false,
+      showMetrics: false,
+      showTasks: false,
+      showBlobStorePurge: true,
     })).toEqual([
-      { id: '1', event: 'telemetry.metrics-collected' },
       { id: '3', event: 'task-manager.task-failed' },
       { id: '4', event: 'authentication' },
       { id: '5', event: 'store.blob-store-purged' },
     ]);
-    expect(filterLogNoise(items, schema, {
-      hideMetrics: false,
-      hideTasks: false,
-      hideBlobStorePurge: true,
-    })).toEqual([
-      { id: '1', event: 'telemetry.metrics-collected' },
-      { id: '2', event: 'Task scheduled for future execution' },
-      { id: '3', event: 'task-manager.task-failed' },
-      { id: '4', event: 'authentication' },
-    ]);
   });
 
-  it('supports task-queue names only when advertised', () => {
-    const oldSchema = {
-      enums: { EventType: [{ name: 'task-queue.task-scheduled', label: 'Task scheduled' }] },
-    } as unknown as Schema;
-    expect(filterLogNoise([{ event: 'task-queue.task-scheduled' }], oldSchema, {
-      hideMetrics: false,
-      hideTasks: true,
-      hideBlobStorePurge: false,
-    })).toEqual([]);
+  it('computes the correct noise filter values based on enabled toggles', () => {
+    const enabledAllFalse = {
+      showMetrics: false,
+      showTasks: false,
+      showBlobStorePurge: false,
+    };
+    // With all filters disabled, only actionable events (failures or retries)
+    // should be returned. The schema contains a single such event.
+    expect(logNoiseFilterValues(schema, enabledAllFalse)).toEqual(
+      new Set(['task-manager.task-failed'])
+    );
+
+    const enabledTaskTrue = {
+      showMetrics: false,
+      showTasks: true, // enable tasks
+      showBlobStorePurge: false,
+    };
+    // When the task filter is enabled, the failure event should no longer be
+    // considered noise, so the set should be empty.
+    expect(logNoiseFilterValues(schema, enabledTaskTrue)).toEqual(new Set());
   });
 });

@@ -117,6 +117,8 @@ export default function AdminPanel() {
     return `${base} · ${section}`;
   }, [section, viewName, id, searchIndex, t]);
 
+  const isLogEntries = viewName === 'x:Log';
+
   useDocumentTitle(pageTitle);
 
   useEffect(() => {
@@ -345,7 +347,7 @@ export default function AdminPanel() {
           className={`min-w-0 flex-1 bg-content-background transition-[margin] ${sidebarOpen ? 'md:ml-64' : ''}`}
         >
           <div className="min-w-0 p-4 sm:p-6">
-            <div className="mx-auto w-full min-w-0 max-w-7xl">
+            <div className={`mx-auto w-full ${isLogEntries ? '' : 'max-w-7xl'} `}>
               {/* Keyed on the active account: forces MainContent (and every
                   view it renders) to fully remount on switch, so
                   account-scoped views can't keep showing stale data fetched

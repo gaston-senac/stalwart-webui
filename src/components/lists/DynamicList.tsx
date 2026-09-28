@@ -337,7 +337,7 @@ function renderQuotaUsage(item: Record<string, unknown>, t: TFn): React.ReactNod
   const barColor = percent >= 90 ? 'bg-destructive' : percent >= 70 ? 'bg-amber-500' : 'bg-green-600';
 
   return (
-    <div className="flex min-w-[8rem] flex-col gap-1">
+    <div className="flex min-w-32 flex-col gap-1">
       <span>{text}</span>
       <div
         className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
@@ -447,7 +447,7 @@ function renderCellValue(
         const str = String(value);
         if (str) {
           return (
-            <pre className="whitespace-pre-wrap break-words text-xs font-mono bg-muted/50 rounded px-1.5 py-1 max-w-md">
+            <pre className="whitespace-pre-wrap wrap-break-word text-xs font-mono bg-muted/50 rounded px-1.5 py-1 max-w-md">
               {str}
             </pre>
           );
@@ -814,7 +814,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
     return () => {
       cancelled = true;
     };
-  }, [isWebApplications, schema]);
+  }, [isWebApplications, schema, objectName]);
 
   useResetOnChange(viewName, () => {
     setItems([]);
@@ -923,10 +923,10 @@ export function DynamicList({ viewName }: DynamicListProps) {
         const filter = buildFilter();
         const sortArr = buildSort();
 
-        const hasActiveLogNoiseFilters = isLogEntries && Object.values(logNoiseFilters).some(Boolean);
+        const showAllLogNoiseFilters = isLogEntries && !Object.values(logNoiseFilters).every(Boolean);
         if (
           activeClientFilters.length > 0 ||
-          hasActiveLogNoiseFilters ||
+          showAllLogNoiseFilters ||
           isMailboxList ||
           clientSortField ||
           (problemsOnly && needsReportProperty)
@@ -1062,7 +1062,6 @@ export function DynamicList({ viewName }: DynamicListProps) {
       buildFilter,
       buildSort,
       buildFetchProperties,
-      isAccountsList,
       isMailboxList,
       clientSortField,
       sort,
@@ -1270,10 +1269,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
   const resetFilters = useCallback(() => {
     setFilterValues({});
     setAppliedFilters({});
-    if (isLogEntries) {
-      setLogNoiseFilters(readLogNoiseFilters(''));
-    }
-  }, [isLogEntries]);
+  }, []);
 
   const handleRefresh = useCallback(() => {
     if (refreshOnCooldown) return;
@@ -1311,8 +1307,13 @@ export function DynamicList({ viewName }: DynamicListProps) {
       params.set('problemsOnly', '1');
     }
     if (isLogEntries) {
-      for (const { key } of LOG_NOISE_FILTERS) {
-        params.set(`log.${key}`, logNoiseFilters[key] ? '1' : '0');
+      const anyActive = Object.values(logNoiseFilters).some(Boolean);
+      if (anyActive) {
+        for (const { key } of LOG_NOISE_FILTERS) {
+          if (logNoiseFilters[key]) {
+            params.set(`log.${key}`, '1');
+          }
+        }
       }
     }
     setSearchParams(params, { replace: true });
@@ -1369,7 +1370,7 @@ export function DynamicList({ viewName }: DynamicListProps) {
     if (!previousItems) return;
     setPageHistory(previousPages);
     setItems(previousItems);
-setCurrentAnchor((previousItems[0]?.id as string) ?? null);
+    setCurrentAnchor((previousItems[0]?.id as string) ?? null);
     setSelectedIds(new Set());
   }, [anchorStack, clientAllItems, clientPage, fetchData, pageHistory]);
 
@@ -1620,7 +1621,6 @@ setCurrentAnchor((previousItems[0]?.id as string) ?? null);
 
   const filtersActive =
     problemsOnly ||
-    (isLogEntries && Object.values(logNoiseFilters).some(Boolean)) ||
     Object.entries(appliedFilters).some(([key, val]) => !key.endsWith('Op') && val.trim() !== '');
 
   const queueOpsLinks = useMemo(() => {
@@ -2074,19 +2074,18 @@ setCurrentAnchor((previousItems[0]?.id as string) ?? null);
                 </Button>
               </CollapsibleTrigger>
               {isLogEntries && (
-                <div className="flex flex-wrap items-center gap-3 border border-[#26262F] bg-[#0A0A0B] px-[10px] py-[6px] text-white">
-                  <span className="text-[12px] font-medium">{t('list.hide', 'Hide:')}</span>
+                <div className="flex flex-wrap items-center gap-3 border border-[#26262F] bg-[#0A0A0B] px-2.5 py-1.5 text-white">
                   {LOG_NOISE_FILTERS.map(({ key, label }) => (
                     <div key={key} className="flex items-center gap-2">
-                      <Switch
-                        id={`log-${key}`}
-                        checked={logNoiseFilters[key]}
-                        onCheckedChange={(checked) => {
-                          setLogNoiseFilters((previous) => ({ ...previous, [key]: checked }));
-                        }}
-                      />
-                      <Label htmlFor={`log-${key}`} className="text-[12px] font-normal text-white">
-                        {t(`list.${key}`, `Hide "${label}"`)}
+                      <Label htmlFor={`log-${key}`} className="flex items-center gap-1.5 text-[12px] font-normal text-white">
+                        <Switch
+                          id={`log-${key}`}
+                          checked={logNoiseFilters[key]}
+                          onCheckedChange={(checked) => {
+                            setLogNoiseFilters((previous) => ({ ...previous, [key]: checked }));
+                          }}
+                        />
+                        {t(`list.${key}`, `${label}`)}
                       </Label>
                     </div>
                   ))}
@@ -2096,12 +2095,21 @@ setCurrentAnchor((previousItems[0]?.id as string) ?? null);
             {isLogEntries && (
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <Switch
-                    id="log-auto-refresh"
-                    checked={logAutoRefresh}
-                    onCheckedChange={setLogAutoRefresh}
-                  />
-                  <Label htmlFor="log-auto-refresh" className="text-[12px] font-normal">
+                  <Label htmlFor="log-auto-refresh" className="flex items-center gap-1.5 text-[12px] font-normal">
+                    <Switch
+                      id="log-auto-refresh"
+                      checked={logAutoRefresh}
+                      // Trigger an immediate refresh when the toggle is turned on.
+                      // The existing `handleRefresh` respects the cooldown, so we just
+                      // invoke it when the user enables auto‑refresh. Turning it off
+                      // simply clears the interval in the effect below.
+                      onCheckedChange={(checked) => {
+                        setLogAutoRefresh(checked);
+                        if (checked) {
+                          handleRefresh();
+                        }
+                      }}
+                    />
                     {t('list.autoRefresh', 'Auto-refresh')}
                   </Label>
                 </div>
@@ -2153,9 +2161,6 @@ setCurrentAnchor((previousItems[0]?.id as string) ?? null);
                               onSelect={() => {
                                 setFilterValues(preset.filters);
                                 setAppliedFilters(preset.filters);
-                                if (preset.noiseFilters) {
-                                  setLogNoiseFilters((current) => ({ ...current, ...preset.noiseFilters }));
-                                }
                                 setFiltersOpen(true);
                               }}
                             >
@@ -2182,13 +2187,13 @@ setCurrentAnchor((previousItems[0]?.id as string) ?? null);
                       type="button"
                       variant="ghost"
                       size="sm"
-                      disabled={loading || (Object.keys(appliedFilters).length === 0 && !isLogEntries)}
+                      disabled={loading || Object.keys(appliedFilters).length === 0}
                       onClick={() => {
                         const name = window.prompt(
                           t('list.filterPresetNamePrompt', 'Name for this filter preset'),
                         );
                         if (!name?.trim()) return;
-                        saveLogFilterPreset(name, appliedFilters, logNoiseFilters);
+                        saveLogFilterPreset(name, appliedFilters);
                         setLogPresets(listLogFilterPresets());
                       }}
                     >

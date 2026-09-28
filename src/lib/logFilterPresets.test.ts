@@ -4,18 +4,12 @@
  * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-SEL
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { deleteLogFilterPreset, listLogFilterPresets, saveLogFilterPreset } from './logFilterPresets';
 
 describe('logFilterPresets', () => {
   beforeEach(() => {
-    const values = new Map<string, string>();
-    vi.stubGlobal('localStorage', {
-      getItem: (key: string) => values.get(key) ?? null,
-      setItem: (key: string, value: string) => values.set(key, value),
-      removeItem: (key: string) => values.delete(key),
-      clear: () => values.clear(),
-    });
+    localStorage.clear();
   });
 
   it('saves, lists, replaces same name, and deletes', () => {
@@ -28,14 +22,5 @@ describe('logFilterPresets', () => {
     expect(listLogFilterPresets()).toHaveLength(2);
     deleteLogFilterPreset(second.id);
     expect(listLogFilterPresets().map((p) => p.name)).toEqual(['Errors']);
-  });
-
-  it('persists noise visibility with a preset', () => {
-    saveLogFilterPreset('Quiet', {}, { hideMetrics: false, hideTasks: true, hideBlobStorePurge: true });
-    expect(listLogFilterPresets()[0].noiseFilters).toEqual({
-      hideMetrics: false,
-      hideTasks: true,
-      hideBlobStorePurge: true,
-    });
   });
 });
